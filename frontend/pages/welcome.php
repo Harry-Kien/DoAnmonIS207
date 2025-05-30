@@ -44,7 +44,7 @@ include 'header.php';
             <div class="mt-3">
                 <form action="" method="post" enctype="multipart/form-data">
                     <label for="avatar">Ảnh đại diện:</label><br>
-                    <img src="<?php echo !empty($avatar) ? '../assets/avatars/' . htmlspecialchars($avatar) : 'https://via.placeholder.com/80'; ?>" alt="Avatar" class="rounded-circle mb-2" width="80" height="80"><br>
+                    <img src="<?php echo !empty($avatar) ? '../../frontend/assets/avatars/' . htmlspecialchars($avatar) : 'https://via.placeholder.com/80'; ?>" alt="Avatar" class="rounded-circle mb-2" width="80" height="80"><br>
                     <input type="file" name="avatar" id="avatar" accept="image/*" class="form-control mb-2" style="max-width:300px;">
                     <button type="submit" name="update_avatar" class="btn btn-outline-primary btn-sm">Cập nhật ảnh đại diện</button>
                 </form>

@@ -1,12 +1,17 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 // Kiểm tra đăng nhập
-require_once '../../backend/auth/session.php';
+if (!isset($_SESSION['user_id'])) {
+    $current_url = $_SERVER['REQUEST_URI'];
+    header("Location: /IS207-hoomseeker/frontend/auth/login.php?redirect=" . urlencode($current_url));
+    exit();
+}
 
 // Tùy chỉnh tiêu đề trang
 $page_title = "Quản lý phòng đã đăng - Homeseeker";
-
-// Include header
-include '../pages/header.php';
 
 // Kết nối database
 require_once '../../backend/config/config.php';
@@ -18,6 +23,9 @@ $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
+
+// Include header sau khi đã xử lý session và chuyển hướng
+include '../pages/header.php';
 ?>
 
 <div class="container py-5" style="min-height: calc(100vh - 280px);">

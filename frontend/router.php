@@ -1,19 +1,27 @@
 <?php
 ob_start(); // Bắt đầu output buffering
 
-// Chỉ khởi động session nếu không phải là yêu cầu đăng xuất
-if (!isset($_GET['page']) || $_GET['page'] !== 'logout') {
+// Chỉ khởi động session nếu chưa được khởi động
+if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
 // Định nghĩa hằng số cho đường dẫn gốc
 define('BASE_PATH', '/IS207-hoomseeker');
 
-// Bao gồm header
-require_once $_SERVER['DOCUMENT_ROOT'] . BASE_PATH . '/frontend/pages/header.php';
-
 // Lấy tham số page, mặc định là 'home'
 $page = $_GET['page'] ?? 'home';
+
+// Kiểm tra quyền truy cập cho các trang yêu cầu đăng nhập
+$protected_pages = ['my_rooms', 'admin'];
+if (in_array($page, $protected_pages) && !isset($_SESSION['user_id'])) {
+    $current_url = $_SERVER['REQUEST_URI'];
+    header("Location: " . BASE_PATH . "/frontend/auth/login.php?redirect=" . urlencode($current_url));
+    exit();
+}
+
+// Bao gồm header
+require_once $_SERVER['DOCUMENT_ROOT'] . BASE_PATH . '/frontend/pages/header.php';
 
 // Điều hướng dựa trên tham số page
 switch ($page) {
@@ -36,7 +44,12 @@ switch ($page) {
         include $_SERVER['DOCUMENT_ROOT'] . BASE_PATH . '/frontend/room/my_rooms.php';
         break;
     case 'admin':
-        include $_SERVER['DOCUMENT_ROOT'] . BASE_PATH . '/backend/admin/admin_dashboard.php';
+        if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
+            include $_SERVER['DOCUMENT_ROOT'] . BASE_PATH . '/backend/admin/admin_dashboard.php';
+        } else {
+            header("Location: " . BASE_PATH . "/frontend/pages/index.php");
+            exit();
+        }
         break;
     case 'search':
         include $_SERVER['DOCUMENT_ROOT'] . BASE_PATH . '/frontend/pages/search.php';

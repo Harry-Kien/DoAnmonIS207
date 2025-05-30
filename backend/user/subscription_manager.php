@@ -10,11 +10,14 @@ class SubscriptionManager {
      * Lấy thông tin gói dịch vụ hiện tại của người dùng
      */
     public function getUserSubscription($user_id) {
-        $sql = "SELECT us.*, p.name as plan_name, p.plan_code as plan_code, p.price, p.duration 
+        $sql = "SELECT us.*, p.name as plan_name, p.plan_code, p.features, p.max_posts, p.price, p.duration 
                 FROM user_subscriptions us
                 JOIN plans p ON us.plan_id = p.id
-                WHERE us.user_id = ? AND us.is_active = 1 AND us.end_date > NOW()
-                ORDER BY us.end_date DESC LIMIT 1";
+                WHERE us.user_id = ? 
+                AND us.is_active = 1 
+                AND us.end_date > NOW()
+                ORDER BY us.end_date DESC 
+                LIMIT 1";
         
         $stmt = mysqli_prepare($this->conn, $sql);
         mysqli_stmt_bind_param($stmt, "i", $user_id);
@@ -23,21 +26,11 @@ class SubscriptionManager {
         
         if (mysqli_num_rows($result) > 0) {
             $subscription = mysqli_fetch_assoc($result);
-            // Lấy danh sách tính năng từ bảng plans
-            $plan_sql = "SELECT features, max_posts FROM plans WHERE id = ?";
-            $plan_stmt = mysqli_prepare($this->conn, $plan_sql);
-            mysqli_stmt_bind_param($plan_stmt, "i", $subscription['plan_id']);
-            mysqli_stmt_execute($plan_stmt);
-            $plan_result = mysqli_stmt_get_result($plan_stmt);
-            $plan_data = mysqli_fetch_assoc($plan_result);
-            
-            $features = json_decode($plan_data['features'], true);
-            $subscription['features'] = $features;
-            $subscription['max_posts'] = $plan_data['max_posts'];
+            $subscription['features'] = json_decode($subscription['features'], true);
             return $subscription;
         }
         
-        // Nếu không có gói, tạo gói "Cơ bản"
+        // Nếu không có gói đang hoạt động, trả về gói cơ bản
         return $this->getBasicPlan($user_id);
     }
     
@@ -269,6 +262,219 @@ class SubscriptionManager {
         }
         
         return $subscription_id;
+    }
+
+    /**
+     * Lấy thông tin gói dịch vụ trước đó của người dùng nếu còn hạn
+     */
+    public function getPreviousValidSubscription($user_id) {
+        $sql = "SELECT us.*, p.name as plan_name, p.plan_code as plan_code, p.price, p.duration, p.features, p.max_posts
+                FROM user_subscriptions us
+                JOIN plans p ON us.plan_id = p.id
+                WHERE us.user_id = ? 
+                AND us.is_active = 0 
+                AND us.end_date > NOW()
+                AND p.plan_code != 'basic'
+                ORDER BY us.end_date DESC 
+                LIMIT 1";
+        
+        $stmt = mysqli_prepare($this->conn, $sql);
+        mysqli_stmt_bind_param($stmt, "i", $user_id);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        
+        if (mysqli_num_rows($result) > 0) {
+            $subscription = mysqli_fetch_assoc($result);
+            $subscription['features'] = json_decode($subscription['features'], true);
+            return $subscription;
+        }
+        
+        return null;
+    }
+
+    /**
+     * Kích hoạt lại gói dịch vụ trước đó
+     */
+    public function reactivatePreviousSubscription($user_id, $subscription_id) {
+        mysqli_begin_transaction($this->conn);
+        
+        try {
+            // Vô hiệu hóa gói hiện tại
+            $deactivate_sql = "UPDATE user_subscriptions 
+                             SET is_active = 0, updated_at = NOW() 
+                             WHERE user_id = ? AND is_active = 1";
+            $stmt = mysqli_prepare($this->conn, $deactivate_sql);
+            mysqli_stmt_bind_param($stmt, "i", $user_id);
+            mysqli_stmt_execute($stmt);
+            
+            // Kích hoạt lại gói cũ
+            $reactivate_sql = "UPDATE user_subscriptions 
+                             SET is_active = 1, updated_at = NOW() 
+                             WHERE id = ? AND user_id = ?";
+            $stmt = mysqli_prepare($this->conn, $reactivate_sql);
+            mysqli_stmt_bind_param($stmt, "ii", $subscription_id, $user_id);
+            $result = mysqli_stmt_execute($stmt);
+            
+            if (!$result) {
+                throw new Exception("Không thể kích hoạt lại gói dịch vụ");
+            }
+            
+            mysqli_commit($this->conn);
+            return true;
+        } catch (Exception $e) {
+            mysqli_rollback($this->conn);
+            throw $e;
+        }
+    }
+
+    /**
+     * Kiểm tra quyền truy cập tính năng của người dùng
+     */
+    public function checkFeatureAccess($user_id, $feature) {
+        // Lấy thông tin gói hiện tại của người dùng
+        $subscription = $this->getUserSubscription($user_id);
+        
+        if (!$subscription) {
+            // Nếu không có gói, trả về gói cơ bản
+            $subscription = $this->getBasicPlan($user_id);
+        }
+
+        // Kiểm tra xem gói có hết hạn chưa
+        if (isset($subscription['end_date']) && strtotime($subscription['end_date']) < time()) {
+            // Nếu hết hạn, trả về gói cơ bản
+            return $this->getBasicPlan($user_id)['features'][$feature] ?? false;
+        }
+
+        // Kiểm tra tính năng theo gói
+        if ($subscription['plan_code'] === 'premium') {
+            // Gói cao cấp có tất cả tính năng
+            return true;
+        }
+
+        if ($subscription['plan_code'] === 'standard') {
+            // Gói phổ biến có các tính năng cơ bản + đăng tin và hỗ trợ ưu tiên
+            $allowed_features = [
+                'search' => true,
+                'view_details' => true,
+                'contact_owner' => true,
+                'save_favorite' => true,
+                'post_room' => true,
+                'priority_support' => true
+            ];
+            return isset($allowed_features[$feature]) && $allowed_features[$feature];
+        }
+
+        // Gói cơ bản chỉ có các tính năng cơ bản
+        $basic_features = [
+            'search' => true,
+            'view_details' => true,
+            'contact_owner' => true,
+            'save_favorite' => true
+        ];
+        return isset($basic_features[$feature]) && $basic_features[$feature];
+    }
+
+    /**
+     * Cập nhật tính năng cho các gói
+     */
+    public function updatePlanFeatures($plan_code) {
+        $features = [];
+        
+        // Tính năng cơ bản cho tất cả các gói
+        $basic_features = [
+            'search' => true,
+            'view_details' => true,
+            'contact_owner' => true,
+            'save_favorite' => true
+        ];
+        
+        switch ($plan_code) {
+            case 'premium':
+                // Gói cao cấp có tất cả tính năng
+                $features = [
+                    'search' => true,
+                    'view_details' => true,
+                    'contact_owner' => true,
+                    'save_favorite' => true,
+                    'post_room' => true,
+                    'featured_post' => true,
+                    'priority_support' => true,
+                    'free_consultation' => true,
+                    'insurance' => true
+                ];
+                break;
+                
+            case 'standard':
+                // Gói phổ biến có thêm đăng tin và hỗ trợ ưu tiên
+                $features = array_merge($basic_features, [
+                    'post_room' => true,
+                    'priority_support' => true
+                ]);
+                break;
+                
+            case 'basic':
+            default:
+                $features = $basic_features;
+                break;
+        }
+        
+        // Cập nhật vào database
+        $features_json = json_encode($features);
+        $sql = "UPDATE plans SET features = ? WHERE plan_code = ?";
+        $stmt = mysqli_prepare($this->conn, $sql);
+        mysqli_stmt_bind_param($stmt, "ss", $features_json, $plan_code);
+        return mysqli_stmt_execute($stmt);
+    }
+
+    /**
+     * Kiểm tra xem người dùng có thể sử dụng tính năng không
+     */
+    public function canUseFeature($user_id, $feature) {
+        $subscription = $this->getUserSubscription($user_id);
+        
+        // Kiểm tra trạng thái subscription
+        if (!$subscription || !$subscription['is_active']) {
+            return false;
+        }
+        
+        // Kiểm tra thời hạn
+        if (strtotime($subscription['end_date']) < time()) {
+            return false;
+        }
+        
+        // Kiểm tra quyền truy cập tính năng
+        return $this->checkFeatureAccess($user_id, $feature);
+    }
+
+    /**
+     * Lấy số lượng tin đăng còn lại của người dùng
+     */
+    public function getRemainingPosts($user_id) {
+        $subscription = $this->getUserSubscription($user_id);
+        
+        // Nếu không có gói hoặc gói hết hạn
+        if (!$subscription || strtotime($subscription['end_date']) < time()) {
+            return 0;
+        }
+        
+        // Nếu là gói không giới hạn
+        if ($subscription['max_posts'] === null) {
+            return -1; // -1 đại diện cho không giới hạn
+        }
+        
+        // Đếm số tin đã đăng trong thời gian subscription
+        $sql = "SELECT COUNT(*) as posted_count 
+                FROM rooms 
+                WHERE user_id = ? 
+                AND created_at >= ?";
+        
+        $stmt = mysqli_prepare($this->conn, $sql);
+        mysqli_stmt_bind_param($stmt, "is", $user_id, $subscription['start_date']);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $row = mysqli_fetch_assoc($result);
+        
+        return max(0, $subscription['max_posts'] - $row['posted_count']);
     }
 }
 ?>

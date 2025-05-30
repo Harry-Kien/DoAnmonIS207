@@ -245,21 +245,18 @@ include '../pages/header.php';
             </div>
             
             <!-- Thông tin người đăng -->
-            <div class="card shadow">
+            <div class="card mb-4">
                 <div class="card-body">
-                    <h5 class="mb-3">Người đăng</h5>
+                    <h5 class="card-title">Người đăng</h5>
                     <div class="d-flex align-items-center mb-3">
-                        <div class="me-3">
-                            <img src="<?php echo !empty($room['owner_avatar']) ? '../assets/avatars/' . htmlspecialchars($room['owner_avatar']) : 'https://via.placeholder.com/50'; ?>" class="rounded-circle" alt="Avatar" width="50" height="50">
-                        </div>
+                        <img src="<?php echo !empty($room['owner_avatar']) ? '../assets/avatars/' . htmlspecialchars($room['owner_avatar']) : 'https://via.placeholder.com/50'; ?>" 
+                             alt="Avatar" class="rounded-circle me-3" width="50" height="50">
                         <div>
                             <h6 class="mb-1"><?php echo htmlspecialchars($room['owner_username']); ?></h6>
-                            <span class="text-muted small">Thành viên từ <?php echo date('m/Y', strtotime($room['created_at'])); ?></span>
+                            <small class="text-muted">Thành viên từ <?php echo date('m/Y', strtotime($room['created_at'])); ?></small>
                         </div>
                     </div>
-                    <a href="phong.php?user=<?php echo $room['user_id']; ?>" class="btn btn-outline-secondary w-100">
-                        Xem tất cả tin đăng
-                    </a>
+                    <a href="../user/user-listings.php?user_id=<?php echo $room['user_id']; ?>" class="btn btn-outline-primary w-100">Xem tất cả tin đăng</a>
                 </div>
             </div>
         </div>

@@ -3,10 +3,6 @@
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
-// Debug để kiểm tra session
-echo "<!-- Session debug: ";
-var_dump($_SESSION);
-echo " -->";
 ?>
 <!DOCTYPE html>
 <html lang="vi">
@@ -19,9 +15,9 @@ echo " -->";
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../../frontend/assets/css/style.css">
     <?php if (isset($additional_css)): echo $additional_css; endif; ?>
-    <script src="../assets/js/ajax_handlers.js"></script>
+    <script src="../../frontend/assets/js/ajax_handlers.js"></script>
 </head>
 <body class="<?php echo $body_class ?? 'bg-light'; ?>">
     <!-- Header -->
@@ -65,7 +61,7 @@ echo " -->";
     <!-- Phần còn lại giữ nguyên -->
                     
                     <!-- Icon yêu thích -->
-                    <a href="../../backend/user/favorites.php" class="heart-icon">
+                    <a href="../../frontend/user/favorites.php" class="heart-icon">
                         <i class="far fa-heart"></i>
                     </a>
                     

@@ -20,7 +20,7 @@ $stmt->execute();
 $result = $stmt->get_result();
 ?>
 
-<div class="container py-5">
+<div class="container py-5" style="min-height: calc(100vh - 280px);">
     <h1 class="mb-4">Quản lý phòng đã đăng</h1>
     
     <?php if (isset($_SESSION['success_message'])): ?>
@@ -126,8 +126,4 @@ $result = $stmt->get_result();
         </div>
     <?php endif; ?>
 </div>
-
-<?php
-// Include footer
-include '../pages/footer.php';
-?>
+<?php include '../pages/footer.php'; ?>

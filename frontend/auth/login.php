@@ -1,4 +1,6 @@
 <?php
+ob_start(); // Bắt đầu output buffering để ngăn chặn bất kỳ output nào trước header()
+
 // Khởi động session
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -15,21 +17,26 @@ if(isset($_SESSION["loggedin"]) && $_SESSION["loggedin"] === true){
         if(!empty($plan)) {
             $_SESSION['selected_plan'] = $plan;
         }
-        header("location: $redirect");
+        header("Location: " . $redirect);
+        exit;
     } else {
-        header("location: ../../frontend/pages/index.php");
+        // Sử dụng đường dẫn tuyệt đối từ root của website
+        header("Location: /IS207-hoomseeker/frontend/pages/index.php");
+        exit;
     }
-    exit;
 }
-
-// Tự động điền username nếu có cookie
-$username_cookie = isset($_COOKIE['remember_username']) ? $_COOKIE['remember_username'] : '';
 
 // Tùy chỉnh tiêu đề trang
 $page_title = "Đăng nhập - Homeseeker";
 
-// Include header
-include '../pages/header.php';
+// Tự động điền username nếu có cookie
+$username_cookie = isset($_COOKIE['remember_username']) ? $_COOKIE['remember_username'] : '';
+
+// Kiểm tra và lưu thông báo lỗi nếu có
+$login_error = isset($_GET["login_error"]) ? $_GET["login_error"] : '';
+
+// Include header sau khi đã xử lý tất cả logic chuyển hướng
+require_once __DIR__ . '/../pages/header.php';
 ?>
 
 <div class="container py-5">
@@ -40,8 +47,8 @@ include '../pages/header.php';
                     <h2 class="text-center mb-4">Đăng nhập</h2>
                     
                     <?php 
-                    if(isset($_GET["login_error"])){
-                        echo '<div class="alert alert-danger">' . htmlspecialchars($_GET["login_error"]) . '</div>';
+                    if(!empty($login_error)){
+                        echo '<div class="alert alert-danger">' . htmlspecialchars($login_error) . '</div>';
                     }
                     ?>
                     
@@ -81,5 +88,5 @@ include '../pages/header.php';
 
 <?php
 // Include footer
-include '../pages/footer.php';
+require_once '../pages/footer.php';
 ?>

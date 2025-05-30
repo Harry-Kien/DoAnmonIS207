@@ -199,34 +199,57 @@ include '../pages/header.php';
                         </div>
                     <?php endif; ?>
                 </div>
-                <!-- Pagination -->
+
+                <!-- Phân trang -->
                 <?php if ($total_pages > 1): ?>
-                <nav aria-label="Page navigation" class="mt-5">
-                    <ul class="pagination justify-content-center">
-                        <li class="page-item <?php echo ($current_page <= 1) ? 'disabled' : ''; ?>">
-                            <a class="page-link" href="<?php echo getPaginationUrl($current_page - 1); ?>" <?php echo ($current_page <= 1) ? 'tabindex="-1" aria-disabled="true"' : ''; ?>>
-                                <i class="fas fa-chevron-left"></i>
-                            </a>
-                        </li>
-                        <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                            <li class="page-item <?php echo ($i == $current_page) ? 'active' : ''; ?>">
-                                <a class="page-link" href="<?php echo getPaginationUrl($i); ?>"><?php echo $i; ?></a>
+                    <nav aria-label="Phân trang" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            <!-- Nút Previous -->
+                            <li class="page-item <?php echo $current_page <= 1 ? 'disabled' : ''; ?>">
+                                <a class="page-link" href="<?php echo getPaginationUrl($current_page - 1); ?>" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
                             </li>
-                        <?php endfor; ?>
-                        <li class="page-item <?php echo ($current_page >= $total_pages) ? 'disabled' : ''; ?>">
-                            <a class="page-link" href="<?php echo getPaginationUrl($current_page + 1); ?>">
-                                <i class="fas fa-chevron-right"></i>
-                            </a>
-                        </li>
-                    </ul>
-                </nav>
+
+                            <?php
+                            // Hiển thị các nút số trang
+                            $start_page = max(1, $current_page - 2);
+                            $end_page = min($total_pages, $current_page + 2);
+
+                            if ($start_page > 1) {
+                                echo '<li class="page-item"><a class="page-link" href="' . getPaginationUrl(1) . '">1</a></li>';
+                                if ($start_page > 2) {
+                                    echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                                }
+                            }
+
+                            for ($i = $start_page; $i <= $end_page; $i++) {
+                                echo '<li class="page-item ' . ($i == $current_page ? 'active' : '') . '">
+                                    <a class="page-link" href="' . getPaginationUrl($i) . '">' . $i . '</a>
+                                </li>';
+                            }
+
+                            if ($end_page < $total_pages) {
+                                if ($end_page < $total_pages - 1) {
+                                    echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                                }
+                                echo '<li class="page-item"><a class="page-link" href="' . getPaginationUrl($total_pages) . '">' . $total_pages . '</a></li>';
+                            }
+                            ?>
+
+                            <!-- Nút Next -->
+                            <li class="page-item <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>">
+                                <a class="page-link" href="<?php echo getPaginationUrl($current_page + 1); ?>" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
                 <?php endif; ?>
             </div>
         </div>
     </div>
 </section>
-
-
 
 <!-- Script filter -->
 <script>
@@ -236,3 +259,13 @@ window.currentDistrict = '<?php echo addslashes($district); ?>';
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <?php include '../pages/footer.php'; ?>
+
+<script>
+function applySort() {
+    const sortSelect = document.getElementById('sortSelect');
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.set('sort', sortSelect.value);
+    currentUrl.searchParams.delete('page'); // Reset về trang 1 khi thay đổi sort
+    window.location.href = currentUrl.toString();
+}
+</script>

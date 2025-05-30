@@ -121,8 +121,14 @@ include 'header.php';
             <div class="col-md-6">
                 <div class="card h-100">
                     <div class="card-body">
-                        <h5 class="card-title">Thông báo</h5>
-                        <p class="card-text">Bạn không có thông báo mới nào.</p>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="card-title mb-0">Thông báo</h5>
+                        </div>
+
+                        <div class="text-center py-4">
+                            <i class="fas fa-bell text-muted mb-3" style="font-size: 2.5rem;"></i>
+                            <p class="text-muted mb-0">Bạn không có thông báo mới nào</p>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -1,0 +1,185 @@
+.logo-text {
+    font-weight: 600;
+    font-size: 22px;
+    color: #000;
+    text-decoration: none;
+}
+
+.navbar-homeseeker {
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 10px 0;
+}
+
+.nav-link {
+    color: #212529;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+}
+
+.nav-link:hover {
+    color: #ffc107;
+}
+
+.search-icon, .heart-icon, .user-icon {
+    font-size: 1.2rem;
+    color: #212529;
+    margin-left: 15px;
+    cursor: pointer;
+}
+
+.search-icon:hover, .heart-icon:hover, .user-icon:hover {
+    color: #ffc107;
+}
+
+.hero-section {
+    background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('../images/anhbanner.jpg');
+    background-size: cover;
+    background-position: center;
+    color: white;
+    padding: 100px 0;
+    position: relative;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+}
+
+.search-form {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.form-select, .btn {
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.btn-post {
+    background-color: #ffc107;
+    color: #212529;
+    font-weight: 500;
+    border-radius: 4px;
+    padding: 8px 16px;
+    text-decoration: none;
+    display: inline-block;
+    margin-left: 15px;
+}
+
+.btn-post:hover {
+    background-color: #e0a800;
+    color: #212529;
+    text-decoration: none;
+}
+
+.btn-manage {
+    background-color: #f8f9fa;
+    color: #212529;
+    font-weight: 500;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 8px 16px;
+    text-decoration: none;
+    display: inline-block;
+    margin-left: 15px;
+}
+
+.btn-manage:hover {
+    background-color: #e2e6ea;
+    text-decoration: none;
+    color: #212529;
+}
+
+.dropdown-menu {
+    border-radius: 4px;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    border: none;
+    padding: 0.5rem 0;
+}
+
+.dropdown-item {
+    padding: 0.5rem 1.5rem;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+.search-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.search-container {
+    width: 80%;
+    max-width: 800px;
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.2);
+}
+
+.close-search {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 2rem;
+    color: white;
+    cursor: pointer;
+}
+
+.feature-card {
+    transition: transform 0.3s;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.feature-card:hover {
+    transform: translateY(-10px);
+}
+
+.testimonial-card {
+    border-radius: 10px;
+    background-color: #f8f9fa;
+}
+
+.profile-container {
+    max-width: 800px;
+    margin: 50px auto;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    background-color: white;
+}
+
+.user-info {
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+/* Tùy chỉnh màu vàng cho btn-primary */
+.btn-primary {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #212529;
+}
+
+.btn-primary:hover {
+    background-color: #ffca2c;
+    border-color: #ffc720;
+    color: #212529;
+}
+
+.bg-primary {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+} 

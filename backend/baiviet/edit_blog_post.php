@@ -57,6 +57,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+        // Thêm code này sau dòng 64
+        elseif (!$is_admin_request && !empty($_POST['image_url'])) {
+            // Xử lý khi n8n gửi URL ảnh
+            $image_url = $_POST['image_url'];
+        }
+        elseif (!$is_admin_request && !empty($_POST['image_base64'])) {
+            // Xử lý khi n8n gửi ảnh dạng base64
+            $image_data = base64_decode($_POST['image_base64']);
+            $upload_name = time() . '.jpg';
+            $upload_path = $upload_dir . $upload_name;
+            file_put_contents($upload_path, $image_data);
+            $image_url = '/frontend/assets/images/uploads/' . $upload_name;
+        }
+
         // Cập nhật bài viết
         $sql = "UPDATE blog_posts SET title = ?, excerpt = ?, content = ?, image_url = ?, author = ?, category_id = ? WHERE id = ?";
         $stmt = mysqli_prepare($conn, $sql);

@@ -76,10 +76,9 @@ $total_records = mysqli_fetch_assoc($count_result)['total'];
 $total_pages = ceil($total_records / $limit);
 
 // Lấy danh sách thanh toán
-$sql = "SELECT p.*, u.username, u.email, s.name as subscription_name
+$sql = "SELECT p.*, u.username, u.email 
         FROM payments p 
         LEFT JOIN user u ON p.user_id = u.id
-        LEFT JOIN subscriptions s ON p.subscription_id = s.id
         $where_clause 
         ORDER BY p.created_at DESC
         LIMIT $offset, $limit";
@@ -444,15 +443,31 @@ $current_page = 'payments';
                                     <td><?php echo $row['id']; ?></td>
                                     <td>
                                         <a href="view_user.php?id=<?php echo $row['user_id']; ?>" class="text-decoration-none">
-                                            <?php echo htmlspecialchars($row['username']); ?>
+                                            <?php echo htmlspecialchars($row['username'] ?? 'N/A'); ?>
                                         </a>
                                     </td>
                                     <td>
-                                        <?php if (isset($row['subscription_name'])): ?>
-                                            <span class="badge badge-subscription"><?php echo htmlspecialchars($row['subscription_name']); ?></span>
-                                        <?php else: ?>
-                                            <span class="text-muted">Không áp dụng</span>
-                                        <?php endif; ?>
+                                        <?php
+                                        // Xác định loại gói dựa trên mã giao dịch hoặc thông tin khác
+                                        $transaction_id = $row['transaction_id'] ?? '';
+                                        $payment_code = $row['payment_code'] ?? '';
+                                        
+                                        if (strpos($transaction_id, 'standard') !== false || strpos($payment_code, 'standard') !== false) {
+                                            echo '<span class="badge badge-subscription">Gói phổ biến</span>';
+                                        } elseif (strpos($transaction_id, 'premium') !== false || strpos($payment_code, 'premium') !== false) {
+                                            echo '<span class="badge badge-subscription">Gói cao cấp</span>';
+                                        } else {
+                                            // Kiểm tra số tiền để đoán gói
+                                            $amount = $row['amount'] ?? 0;
+                                            if ($amount == 199000) {
+                                                echo '<span class="badge badge-subscription">Gói phổ biến</span>';
+                                            } elseif ($amount == 399000) {
+                                                echo '<span class="badge badge-subscription">Gói cao cấp</span>';
+                                            } else {
+                                                echo '<span class="text-muted">Không xác định</span>';
+                                            }
+                                        }
+                                        ?>
                                     </td>
                                     <td><?php echo number_format($row['amount']); ?> đ</td>
                                     <td><?php echo htmlspecialchars(ucfirst($row['payment_method'] ?? 'N/A')); ?></td>

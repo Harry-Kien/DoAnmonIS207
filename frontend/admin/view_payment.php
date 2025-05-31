@@ -27,57 +27,59 @@ if (isset($_POST['action'])) {
             mysqli_stmt_bind_param($stmt, "i", $payment_id);
             mysqli_stmt_execute($stmt);
             
-            // Cập nhật gói đăng ký nếu có
-            $check_subscription = "SELECT subscription_id, user_id FROM payments WHERE id = ?";
-            $stmt = mysqli_prepare($conn, $check_subscription);
+            // Lấy thông tin thanh toán
+            $payment_sql = "SELECT user_id, amount, transaction_id, payment_code FROM payments WHERE id = ?";
+            $stmt = mysqli_prepare($conn, $payment_sql);
             mysqli_stmt_bind_param($stmt, "i", $payment_id);
             mysqli_stmt_execute($stmt);
-            $result = mysqli_stmt_get_result($stmt);
+            $payment_result = mysqli_stmt_get_result($stmt);
             
-            if ($row = mysqli_fetch_assoc($result)) {
-                if (!empty($row['subscription_id'])) {
-                    // Lấy thông tin gói đăng ký
-                    $plan_sql = "SELECT duration FROM subscriptions WHERE id = ?";
-                    $stmt = mysqli_prepare($conn, $plan_sql);
-                    mysqli_stmt_bind_param($stmt, "i", $row['subscription_id']);
-                    mysqli_stmt_execute($stmt);
-                    $plan_result = mysqli_stmt_get_result($stmt);
-                    
-                    if ($plan = mysqli_fetch_assoc($plan_result)) {
-                        $duration = intval($plan['duration']); // Số ngày của gói
-                        
-                        // Kiểm tra xem người dùng đã có gói đăng ký chưa
-                        $check_user_sub = "SELECT * FROM user_subscriptions WHERE user_id = ? AND status = 'active' ORDER BY end_date DESC LIMIT 1";
-                        $stmt = mysqli_prepare($conn, $check_user_sub);
-                        mysqli_stmt_bind_param($stmt, "i", $row['user_id']);
-                        mysqli_stmt_execute($stmt);
-                        $user_sub_result = mysqli_stmt_get_result($stmt);
-                        
-                        $start_date = date('Y-m-d');
-                        $end_date = date('Y-m-d', strtotime("+$duration days"));
-                        
-                        if ($user_sub = mysqli_fetch_assoc($user_sub_result)) {
-                            // Nếu đã có gói, gia hạn thêm
-                            if (strtotime($user_sub['end_date']) > time()) {
-                                $start_date = $user_sub['end_date'];
-                                $end_date = date('Y-m-d', strtotime("$start_date +$duration days"));
-                            }
-                            
-                            // Cập nhật gói hiện tại thành hết hạn
-                            $update_old_sub = "UPDATE user_subscriptions SET status = 'expired' WHERE id = ?";
-                            $stmt = mysqli_prepare($conn, $update_old_sub);
-                            mysqli_stmt_bind_param($stmt, "i", $user_sub['id']);
-                            mysqli_stmt_execute($stmt);
-                        }
-                        
-                        // Thêm gói mới
-                        $insert_sub = "INSERT INTO user_subscriptions (user_id, plan_id, start_date, end_date, status, payment_id) 
-                                      VALUES (?, ?, ?, ?, 'active', ?)";
-                        $stmt = mysqli_prepare($conn, $insert_sub);
-                        mysqli_stmt_bind_param($stmt, "iissi", $row['user_id'], $row['subscription_id'], $start_date, $end_date, $payment_id);
-                        mysqli_stmt_execute($stmt);
-                    }
+            if ($payment_data = mysqli_fetch_assoc($payment_result)) {
+                $user_id = $payment_data['user_id'];
+                $amount = $payment_data['amount'];
+                $transaction_id = $payment_data['transaction_id'] ?? '';
+                $payment_code = $payment_data['payment_code'] ?? '';
+                
+                // Xác định plan_id dựa trên số tiền hoặc mã giao dịch
+                $plan_id = 1; // Mặc định là basic
+                if ($amount == 199000 || strpos($transaction_id, 'standard') !== false || strpos($payment_code, 'standard') !== false) {
+                    $plan_id = 2; // Standard plan
+                } elseif ($amount == 399000 || strpos($transaction_id, 'premium') !== false || strpos($payment_code, 'premium') !== false) {
+                    $plan_id = 3; // Premium plan
                 }
+                
+                // Tính thời gian gói (30 ngày cho standard và premium)
+                $duration = 30;
+                $start_date = date('Y-m-d');
+                $end_date = date('Y-m-d', strtotime("+$duration days"));
+                
+                // Kiểm tra xem người dùng đã có gói đăng ký chưa
+                $check_user_sub = "SELECT * FROM user_subscriptions WHERE user_id = ? AND is_active = 1 ORDER BY end_date DESC LIMIT 1";
+                $stmt = mysqli_prepare($conn, $check_user_sub);
+                mysqli_stmt_bind_param($stmt, "i", $user_id);
+                mysqli_stmt_execute($stmt);
+                $user_sub_result = mysqli_stmt_get_result($stmt);
+                
+                if ($user_sub = mysqli_fetch_assoc($user_sub_result)) {
+                    // Nếu đã có gói, gia hạn thêm
+                    if (strtotime($user_sub['end_date']) > time()) {
+                        $start_date = $user_sub['end_date'];
+                        $end_date = date('Y-m-d', strtotime("$start_date +$duration days"));
+                    }
+                    
+                    // Cập nhật gói hiện tại thành không hoạt động
+                    $update_old_sub = "UPDATE user_subscriptions SET is_active = 0 WHERE id = ?";
+                    $stmt = mysqli_prepare($conn, $update_old_sub);
+                    mysqli_stmt_bind_param($stmt, "i", $user_sub['id']);
+                    mysqli_stmt_execute($stmt);
+                }
+                
+                // Thêm gói mới
+                $insert_sub = "INSERT INTO user_subscriptions (user_id, plan_id, start_date, end_date, is_active, created_at, updated_at) 
+                              VALUES (?, ?, ?, ?, 1, NOW(), NOW())";
+                $stmt = mysqli_prepare($conn, $insert_sub);
+                mysqli_stmt_bind_param($stmt, "iiss", $user_id, $plan_id, $start_date, $end_date);
+                mysqli_stmt_execute($stmt);
             }
             
             $message = "Thanh toán #$payment_id đã được xác nhận thành công!";
@@ -106,11 +108,9 @@ if (isset($_POST['action'])) {
 }
 
 // Lấy thông tin chi tiết thanh toán
-$sql = "SELECT p.*, u.username, u.email, u.phone, 
-               s.name as subscription_name, s.description as subscription_description
+$sql = "SELECT p.*, u.username, u.email, u.phone
         FROM payments p 
         LEFT JOIN user u ON p.user_id = u.id
-        LEFT JOIN subscriptions s ON p.subscription_id = s.id
         WHERE p.id = ?";
 $stmt = mysqli_prepare($conn, $sql);
 mysqli_stmt_bind_param($stmt, "i", $payment_id);
@@ -123,6 +123,20 @@ if (mysqli_num_rows($result) == 0) {
 }
 
 $payment = mysqli_fetch_assoc($result);
+
+// Xác định tên gói dựa trên mã giao dịch hoặc số tiền
+$plan_name = "Không xác định";
+$transaction_id = $payment['transaction_id'] ?? '';
+$payment_code = $payment['payment_code'] ?? '';
+$amount = $payment['amount'] ?? 0;
+
+if (strpos($transaction_id, 'standard') !== false || strpos($payment_code, 'standard') !== false || $amount == 199000) {
+    $plan_name = "Gói phổ biến";
+    $plan_description = "Gói phổ biến cho chủ nhà trọ";
+} elseif (strpos($transaction_id, 'premium') !== false || strpos($payment_code, 'premium') !== false || $amount == 399000) {
+    $plan_name = "Gói cao cấp";
+    $plan_description = "Gói cao cấp cho chủ nhà trọ chuyên nghiệp";
+}
 
 // Xác định trang hiện tại
 $current_page = 'payments';
@@ -450,21 +464,27 @@ $current_page = 'payments';
                     <div class="col-md-12">
                         <div class="info-item">
                             <div class="info-label">Tên gói:</div>
-                            <span class="badge badge-subscription"><?php echo htmlspecialchars($payment['subscription_name'] ?? 'N/A'); ?></span>
+                            <span class="badge badge-subscription"><?php echo htmlspecialchars($plan_name); ?></span>
                         </div>
-                        <?php if (!empty($payment['subscription_description'])): ?>
+                        <?php if (isset($plan_description)): ?>
                         <div class="info-item">
                             <div class="info-label">Mô tả:</div>
-                            <?php echo htmlspecialchars($payment['subscription_description']); ?>
+                            <?php echo htmlspecialchars($plan_description); ?>
                         </div>
                         <?php endif; ?>
                         
                         <?php 
                         // Kiểm tra trạng thái gói đăng ký
                         if ($payment['status'] == 'completed') {
-                            $sub_sql = "SELECT * FROM user_subscriptions WHERE payment_id = ?";
+                            // Từ ảnh cơ sở dữ liệu, chúng ta thấy bảng user_subscriptions có cấu trúc:
+                            // id, user_id, plan_id, start_date, end_date, is_active, created_at, updated_at
+                            // Không có cột payment_id, nên tìm dựa trên user_id và thời gian tạo gần với thời gian thanh toán
+                            $sub_sql = "SELECT * FROM user_subscriptions 
+                                      WHERE user_id = ? 
+                                      ORDER BY ABS(TIMESTAMPDIFF(SECOND, created_at, ?)) ASC 
+                                      LIMIT 1";
                             $stmt = mysqli_prepare($conn, $sub_sql);
-                            mysqli_stmt_bind_param($stmt, "i", $payment_id);
+                            mysqli_stmt_bind_param($stmt, "is", $payment['user_id'], $payment['created_at']);
                             mysqli_stmt_execute($stmt);
                             $sub_result = mysqli_stmt_get_result($stmt);
                             
@@ -479,13 +499,26 @@ $current_page = 'payments';
                                     ' . date('d/m/Y', strtotime($sub['end_date'])) . '
                                 </div>';
                                 
-                                $status_text = $sub['status'] == 'active' ? 'Đang hoạt động' : 'Hết hạn';
-                                $status_class = $sub['status'] == 'active' ? 'badge-completed' : 'badge-cancelled';
+                                // Kiểm tra ngày hết hạn để xác định trạng thái thực tế
+                                $is_expired = strtotime($sub['end_date']) < time();
+                                
+                                // Hiển thị trạng thái dựa trên ngày hết hạn thực tế, không phụ thuộc vào trường is_active
+                                $status_text = !$is_expired ? 'Đang hoạt động' : 'Hết hạn';
+                                $status_class = !$is_expired ? 'badge-completed' : 'badge-cancelled';
                                 
                                 echo '<div class="info-item">
                                     <div class="info-label">Trạng thái gói:</div>
                                     <span class="badge ' . $status_class . '">' . $status_text . '</span>
                                 </div>';
+                                
+                                // Nếu trạng thái thực tế và trạng thái trong DB không khớp, cập nhật DB
+                                if (($sub['is_active'] == 1 && $is_expired) || ($sub['is_active'] == 0 && !$is_expired)) {
+                                    $new_active_status = $is_expired ? 0 : 1;
+                                    $update_status_sql = "UPDATE user_subscriptions SET is_active = ? WHERE id = ?";
+                                    $status_stmt = mysqli_prepare($conn, $update_status_sql);
+                                    mysqli_stmt_bind_param($status_stmt, "ii", $new_active_status, $sub['id']);
+                                    mysqli_stmt_execute($status_stmt);
+                                }
                             } else {
                                 echo '<div class="alert alert-warning">Gói đăng ký chưa được kích hoạt.</div>';
                             }

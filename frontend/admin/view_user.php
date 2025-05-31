@@ -331,7 +331,9 @@ $current_page = 'users';
                 <div class="row">
                     <div class="col-md-3 text-center mb-4 mb-md-0">
                         <?php if (!empty($user['avatar'])): ?>
-                            <img src="<?php echo htmlspecialchars($user['avatar']); ?>" alt="Avatar" class="user-avatar mb-3">
+                            <a href="../../frontend/assets/avatars/<?php echo htmlspecialchars($user['avatar']); ?>" target="_blank" class="d-inline-block">
+                                <img src="../../frontend/assets/avatars/<?php echo htmlspecialchars($user['avatar']); ?>" alt="Avatar" class="user-avatar mb-3 img-thumbnail" style="cursor: pointer;">
+                            </a>
                         <?php else: ?>
                             <div class="user-avatar d-flex align-items-center justify-content-center bg-light mb-3 mx-auto">
                                 <i class="fas fa-user fa-3x text-secondary"></i>
@@ -465,8 +467,8 @@ $current_page = 'users';
                     </div>
                     <div class="col-md-6">
                         <div class="d-grid gap-2">
-                            <a href="rooms.php?user_id=<?php echo $user['id']; ?>" class="btn btn-primary">
-                                <i class="fas fa-search"></i> Xem danh sách phòng
+                            <a href="rooms.php?user_id=<?php echo $user['id']; ?>" class="btn btn-primary btn-lg">
+                                <i class="fas fa-building me-2"></i> Xem danh sách phòng đã đăng
                             </a>
                         </div>
                     </div>

@@ -34,14 +34,16 @@ if (mysqli_num_rows($result) == 0) {
 $room = mysqli_fetch_assoc($result);
 
 // Lấy danh sách hình ảnh của phòng
-$sql_images = "SELECT * FROM room_images WHERE room_id = ?";
+$sql_images = "SELECT image_path FROM room_images WHERE room_id = ?";
 $stmt_images = mysqli_prepare($conn, $sql_images);
 mysqli_stmt_bind_param($stmt_images, "i", $room_id);
 mysqli_stmt_execute($stmt_images);
 $images_result = mysqli_stmt_get_result($stmt_images);
 $images = [];
 while ($image = mysqli_fetch_assoc($images_result)) {
-    $images[] = $image;
+    // Lấy tên file từ đường dẫn đầy đủ
+    $filename = basename($image['image_path']);
+    $images[] = ['image_path' => $filename];
 }
 
 // Xử lý các hành động
@@ -367,7 +369,7 @@ $current_page = 'rooms';
                     <h5 class="mb-3">Hình ảnh</h5>
                     <div class="room-images mb-3">
                         <?php if (count($images) > 0): ?>
-                            <img src="../../<?php echo htmlspecialchars($images[0]['image_path']); ?>" alt="Ảnh phòng" id="mainImage" class="img-fluid">
+                            <img src="../../frontend/assets/uploads/rooms/<?php echo htmlspecialchars($images[0]['image_path']); ?>" alt="Ảnh phòng" id="mainImage" class="img-fluid">
                         <?php else: ?>
                             <div class="d-flex justify-content-center align-items-center h-100 bg-light">
                                 <p class="text-muted">Không có hình ảnh</p>
@@ -378,10 +380,10 @@ $current_page = 'rooms';
                     <?php if (count($images) > 1): ?>
                     <div class="d-flex flex-wrap gap-2">
                         <?php foreach ($images as $index => $image): ?>
-                            <img src="../../<?php echo htmlspecialchars($image['image_path']); ?>" 
+                            <img src="../../frontend/assets/uploads/rooms/<?php echo htmlspecialchars($image['image_path']); ?>" 
                                  alt="Thumbnail <?php echo $index + 1; ?>" 
                                  class="room-thumbnail <?php echo $index === 0 ? 'active' : ''; ?>"
-                                 onclick="changeMainImage('../../<?php echo htmlspecialchars($image['image_path']); ?>', this)">
+                                 onclick="changeMainImage('../../frontend/assets/uploads/rooms/<?php echo htmlspecialchars($image['image_path']); ?>', this)">
                         <?php endforeach; ?>
                     </div>
                     <?php endif; ?>

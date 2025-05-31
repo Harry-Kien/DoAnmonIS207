@@ -15,67 +15,39 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
     
     switch ($action) {
         case 'approve':
-            $sql = "UPDATE rooms SET status = 'approved' WHERE id = ?";
+            $sql = "UPDATE rooms SET status = 'approved', updated_at = NOW() WHERE id = ?";
             $stmt = mysqli_prepare($conn, $sql);
             mysqli_stmt_bind_param($stmt, "i", $id);
             mysqli_stmt_execute($stmt);
-            $message = "Phòng #$id đã được duyệt thành công!";
+            $message = "Phòng trọ #$id đã được phê duyệt!";
             $message_type = "success";
             break;
             
         case 'reject':
-            $sql = "UPDATE rooms SET status = 'rejected' WHERE id = ?";
+            $sql = "UPDATE rooms SET status = 'rejected', updated_at = NOW() WHERE id = ?";
             $stmt = mysqli_prepare($conn, $sql);
             mysqli_stmt_bind_param($stmt, "i", $id);
             mysqli_stmt_execute($stmt);
-            $message = "Phòng #$id đã bị từ chối!";
+            $message = "Phòng trọ #$id đã bị từ chối!";
             $message_type = "warning";
             break;
             
         case 'delete':
-            // Xóa hình ảnh liên quan trước
-            $sql_images = "SELECT image_path FROM room_images WHERE room_id = ?";
-            $stmt_images = mysqli_prepare($conn, $sql_images);
-            mysqli_stmt_bind_param($stmt_images, "i", $id);
-            mysqli_stmt_execute($stmt_images);
-            $result_images = mysqli_stmt_get_result($stmt_images);
-            
-            while ($image = mysqli_fetch_assoc($result_images)) {
-                if (file_exists("../../" . $image['image_path'])) {
-                    unlink("../../" . $image['image_path']);
-                }
-            }
-            
-            // Xóa dữ liệu trong database
-            mysqli_begin_transaction($conn);
-            try {
-                // Xóa hình ảnh
-                $sql_delete_images = "DELETE FROM room_images WHERE room_id = ?";
-                $stmt_delete_images = mysqli_prepare($conn, $sql_delete_images);
-                mysqli_stmt_bind_param($stmt_delete_images, "i", $id);
-                mysqli_stmt_execute($stmt_delete_images);
-                
-                // Xóa phòng
-                $sql_delete_room = "DELETE FROM rooms WHERE id = ?";
-                $stmt_delete_room = mysqli_prepare($conn, $sql_delete_room);
-                mysqli_stmt_bind_param($stmt_delete_room, "i", $id);
-                mysqli_stmt_execute($stmt_delete_room);
-                
-                mysqli_commit($conn);
-                $message = "Phòng #$id đã được xóa thành công!";
-                $message_type = "success";
-            } catch (Exception $e) {
-                mysqli_rollback($conn);
-                $message = "Lỗi khi xóa phòng: " . $e->getMessage();
-                $message_type = "danger";
-            }
+            $sql = "DELETE FROM rooms WHERE id = ?";
+            $stmt = mysqli_prepare($conn, $sql);
+            mysqli_stmt_bind_param($stmt, "i", $id);
+            mysqli_stmt_execute($stmt);
+            $message = "Phòng trọ #$id đã được xóa thành công!";
+            $message_type = "success";
             break;
     }
 }
 
-// Lấy danh sách phòng với bộ lọc
+// Lấy danh sách phòng trọ với bộ lọc
 $filter = isset($_GET['filter']) ? $_GET['filter'] : 'all';
 $search = isset($_GET['search']) ? mysqli_real_escape_string($conn, $_GET['search']) : '';
+$user_id = isset($_GET['user_id']) ? intval($_GET['user_id']) : 0;
+
 $where_clause = '';
 
 if ($filter == 'pending') {
@@ -88,8 +60,21 @@ if ($filter == 'pending') {
     $where_clause = "WHERE 1=1";
 }
 
+// Nếu có user_id, thêm điều kiện lọc theo người dùng
+if ($user_id > 0) {
+    $where_clause .= " AND r.user_id = $user_id";
+    
+    // Lấy thông tin người dùng để hiển thị
+    $user_sql = "SELECT username, email FROM user WHERE id = ?";
+    $stmt = mysqli_prepare($conn, $user_sql);
+    mysqli_stmt_bind_param($stmt, "i", $user_id);
+    mysqli_stmt_execute($stmt);
+    $user_result = mysqli_stmt_get_result($stmt);
+    $user_info = mysqli_fetch_assoc($user_result);
+}
+
 if (!empty($search)) {
-    $where_clause .= " AND (r.title LIKE '%$search%' OR r.description LIKE '%$search%' OR u.username LIKE '%$search%' OR r.address LIKE '%$search%')";
+    $where_clause .= " AND (r.title LIKE '%$search%' OR r.address LIKE '%$search%' OR u.username LIKE '%$search%')";
 }
 
 // Phân trang
@@ -98,15 +83,17 @@ $limit = 10;
 $offset = ($page - 1) * $limit;
 
 // Đếm tổng số bản ghi
-$count_sql = "SELECT COUNT(*) as total FROM rooms r JOIN user u ON r.user_id = u.id $where_clause";
+$count_sql = "SELECT COUNT(*) as total FROM rooms r 
+              LEFT JOIN user u ON r.user_id = u.id 
+              $where_clause";
 $count_result = mysqli_query($conn, $count_sql);
 $total_records = mysqli_fetch_assoc($count_result)['total'];
 $total_pages = ceil($total_records / $limit);
 
-// Lấy danh sách phòng
-$sql = "SELECT r.*, u.username 
+// Lấy danh sách phòng trọ
+$sql = "SELECT r.*, u.username, u.email, u.avatar
         FROM rooms r 
-        JOIN user u ON r.user_id = u.id 
+        LEFT JOIN user u ON r.user_id = u.id
         $where_clause 
         ORDER BY r.created_at DESC
         LIMIT $offset, $limit";
@@ -121,7 +108,7 @@ $current_page = 'rooms';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý phòng - Homeseeker Admin</title>
+    <title>Quản lý phòng trọ - Homeseeker Admin</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -225,6 +212,13 @@ $current_page = 'rooms';
             background-color: #dc3545;
             color: #fff;
         }
+        .user-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 5px;
+        }
         .pagination {
             justify-content: center;
         }
@@ -301,7 +295,18 @@ $current_page = 'rooms';
     <!-- Main Content -->
     <div class="content">
         <div class="navbar-admin d-flex justify-content-between align-items-center">
-            <h4 class="mb-0">Quản lý phòng</h4>
+            <div>
+                <h4 class="mb-0">
+                    <?php if (isset($user_id) && $user_id > 0 && isset($user_info)): ?>
+                        Phòng trọ của người dùng: <strong><?php echo htmlspecialchars($user_info['username']); ?></strong>
+                        <a href="view_user.php?id=<?php echo $user_id; ?>" class="btn btn-sm btn-outline-primary ms-2">
+                            <i class="fas fa-user"></i> Xem thông tin
+                        </a>
+                    <?php else: ?>
+                        Quản lý phòng trọ
+                    <?php endif; ?>
+                </h4>
+            </div>
             <div>
                 <span>Xin chào, <strong><?php echo htmlspecialchars($_SESSION['username']); ?></strong></span>
             </div>
@@ -319,16 +324,16 @@ $current_page = 'rooms';
             <div class="row">
                 <div class="col-md-6 mb-3 mb-md-0">
                     <div class="btn-group" role="group">
-                        <a href="rooms.php" class="btn <?php echo $filter == 'all' ? 'btn-primary' : 'btn-outline-primary'; ?>">
+                        <a href="rooms.php<?php echo $user_id ? "?user_id=$user_id" : ''; ?>" class="btn <?php echo $filter == 'all' ? 'btn-primary' : 'btn-outline-primary'; ?>">
                             <i class="fas fa-list"></i> Tất cả
                         </a>
-                        <a href="rooms.php?filter=pending" class="btn <?php echo $filter == 'pending' ? 'btn-primary' : 'btn-outline-primary'; ?>">
+                        <a href="rooms.php?filter=pending<?php echo $user_id ? "&user_id=$user_id" : ''; ?>" class="btn <?php echo $filter == 'pending' ? 'btn-primary' : 'btn-outline-primary'; ?>">
                             <i class="fas fa-clock"></i> Chờ duyệt
                         </a>
-                        <a href="rooms.php?filter=approved" class="btn <?php echo $filter == 'approved' ? 'btn-primary' : 'btn-outline-primary'; ?>">
+                        <a href="rooms.php?filter=approved<?php echo $user_id ? "&user_id=$user_id" : ''; ?>" class="btn <?php echo $filter == 'approved' ? 'btn-primary' : 'btn-outline-primary'; ?>">
                             <i class="fas fa-check"></i> Đã duyệt
                         </a>
-                        <a href="rooms.php?filter=rejected" class="btn <?php echo $filter == 'rejected' ? 'btn-primary' : 'btn-outline-primary'; ?>">
+                        <a href="rooms.php?filter=rejected<?php echo $user_id ? "&user_id=$user_id" : ''; ?>" class="btn <?php echo $filter == 'rejected' ? 'btn-primary' : 'btn-outline-primary'; ?>">
                             <i class="fas fa-times"></i> Đã từ chối
                         </a>
                     </div>
@@ -338,7 +343,10 @@ $current_page = 'rooms';
                         <?php if ($filter != 'all'): ?>
                             <input type="hidden" name="filter" value="<?php echo $filter; ?>">
                         <?php endif; ?>
-                        <input type="text" class="form-control me-2" name="search" placeholder="Tìm kiếm phòng..." value="<?php echo htmlspecialchars($search); ?>">
+                        <?php if ($user_id): ?>
+                            <input type="hidden" name="user_id" value="<?php echo $user_id; ?>">
+                        <?php endif; ?>
+                        <input type="text" class="form-control me-2" name="search" placeholder="Tìm kiếm phòng trọ..." value="<?php echo htmlspecialchars($search); ?>">
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-search"></i>
                         </button>
@@ -350,7 +358,7 @@ $current_page = 'rooms';
         <!-- Rooms Table -->
         <div class="table-card">
             <div class="card-header bg-white p-3 d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Danh sách phòng</h5>
+                <h5 class="mb-0">Danh sách phòng trọ</h5>
                 <span class="badge bg-primary"><?php echo $total_records; ?> phòng</span>
             </div>
             <div class="card-body p-0">
@@ -359,9 +367,9 @@ $current_page = 'rooms';
                         <thead class="table-dark">
                             <tr>
                                 <th>ID</th>
+                                <th>Ảnh</th>
                                 <th>Tiêu đề</th>
-                                <th>Người đăng</th>
-                                <th>Loại</th>
+                                <th>Chủ phòng</th>
                                 <th>Giá</th>
                                 <th>Địa chỉ</th>
                                 <th>Trạng thái</th>
@@ -374,18 +382,30 @@ $current_page = 'rooms';
                                 <?php while($row = mysqli_fetch_assoc($result)): ?>
                                 <tr>
                                     <td><?php echo $row['id']; ?></td>
+                                    <td>
+                                        <?php if (!empty($row['thumbnail'])): ?>
+                                            <img src="<?php echo htmlspecialchars($row['thumbnail']); ?>" alt="Thumbnail" class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover;">
+                                        <?php else: ?>
+                                            <div class="bg-light d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                                <i class="fas fa-home text-secondary"></i>
+                                            </div>
+                                        <?php endif; ?>
+                                    </td>
                                     <td><?php echo htmlspecialchars($row['title']); ?></td>
-                                    <td><?php echo htmlspecialchars($row['username']); ?></td>
-                                    <td><?php echo htmlspecialchars($row['type'] ?? 'Không xác định'); ?></td>
+                                    <td>
+                                        <a href="view_user.php?id=<?php echo $row['user_id']; ?>" class="text-decoration-none">
+                                            <?php echo htmlspecialchars($row['username']); ?>
+                                        </a>
+                                    </td>
                                     <td><?php echo number_format($row['price']); ?> đ</td>
-                                    <td><?php echo htmlspecialchars($row['address'] ?? ''); ?></td>
+                                    <td><?php echo htmlspecialchars($row['address']); ?></td>
                                     <td>
                                         <?php if ($row['status'] == 'pending'): ?>
                                             <span class="badge badge-pending">Chờ duyệt</span>
                                         <?php elseif ($row['status'] == 'approved'): ?>
                                             <span class="badge badge-approved">Đã duyệt</span>
                                         <?php else: ?>
-                                            <span class="badge badge-rejected">Từ chối</span>
+                                            <span class="badge badge-rejected">Đã từ chối</span>
                                         <?php endif; ?>
                                     </td>
                                     <td><?php echo date('d/m/Y', strtotime($row['created_at'])); ?></td>
@@ -394,17 +414,15 @@ $current_page = 'rooms';
                                             <a href="view_room.php?id=<?php echo $row['id']; ?>" class="btn btn-info btn-sm action-btn" title="Xem chi tiết">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <?php if ($row['status'] != 'approved'): ?>
-                                                <a href="rooms.php?action=approve&id=<?php echo $row['id']; ?>" class="btn btn-success btn-sm action-btn" title="Duyệt" onclick="return confirm('Bạn có chắc muốn duyệt phòng này?');">
+                                            <?php if ($row['status'] == 'pending'): ?>
+                                                <a href="rooms.php?action=approve&id=<?php echo $row['id']; ?><?php echo $user_id ? "&user_id=$user_id" : ''; ?><?php echo $filter != 'all' ? "&filter=$filter" : ''; ?>" class="btn btn-success btn-sm action-btn" title="Duyệt phòng" onclick="return confirm('Bạn có chắc muốn duyệt phòng này?');">
                                                     <i class="fas fa-check"></i>
                                                 </a>
-                                            <?php endif; ?>
-                                            <?php if ($row['status'] != 'rejected'): ?>
-                                                <a href="rooms.php?action=reject&id=<?php echo $row['id']; ?>" class="btn btn-warning btn-sm action-btn" title="Từ chối" onclick="return confirm('Bạn có chắc muốn từ chối phòng này?');">
+                                                <a href="rooms.php?action=reject&id=<?php echo $row['id']; ?><?php echo $user_id ? "&user_id=$user_id" : ''; ?><?php echo $filter != 'all' ? "&filter=$filter" : ''; ?>" class="btn btn-warning btn-sm action-btn" title="Từ chối" onclick="return confirm('Bạn có chắc muốn từ chối phòng này?');">
                                                     <i class="fas fa-times"></i>
                                                 </a>
                                             <?php endif; ?>
-                                            <a href="rooms.php?action=delete&id=<?php echo $row['id']; ?>" class="btn btn-danger btn-sm action-btn" title="Xóa" onclick="return confirm('Bạn có chắc muốn xóa phòng này? Thao tác này không thể hoàn tác.');">
+                                            <a href="rooms.php?action=delete&id=<?php echo $row['id']; ?><?php echo $user_id ? "&user_id=$user_id" : ''; ?><?php echo $filter != 'all' ? "&filter=$filter" : ''; ?>" class="btn btn-danger btn-sm action-btn" title="Xóa" onclick="return confirm('Bạn có chắc muốn xóa phòng này? Thao tác này không thể hoàn tác.');">
                                                 <i class="fas fa-trash"></i>
                                             </a>
                                         </div>
@@ -413,7 +431,7 @@ $current_page = 'rooms';
                                 <?php endwhile; ?>
                             <?php else: ?>
                                 <tr>
-                                    <td colspan="9" class="text-center py-4">Không có phòng nào phù hợp với tiêu chí tìm kiếm</td>
+                                    <td colspan="9" class="text-center py-4">Không có phòng trọ nào phù hợp với tiêu chí tìm kiếm</td>
                                 </tr>
                             <?php endif; ?>
                         </tbody>
@@ -426,7 +444,7 @@ $current_page = 'rooms';
                     <ul class="pagination mb-0">
                         <?php if ($page > 1): ?>
                             <li class="page-item">
-                                <a class="page-link" href="?page=<?php echo $page-1; ?><?php echo !empty($filter) && $filter != 'all' ? '&filter='.$filter : ''; ?><?php echo !empty($search) ? '&search='.$search : ''; ?>" aria-label="Previous">
+                                <a class="page-link" href="?page=<?php echo $page-1; ?><?php echo !empty($filter) && $filter != 'all' ? '&filter='.$filter : ''; ?><?php echo !empty($search) ? '&search='.$search : ''; ?><?php echo $user_id ? "&user_id=$user_id" : ''; ?>" aria-label="Previous">
                                     <span aria-hidden="true">&laquo;</span>
                                 </a>
                             </li>
@@ -434,7 +452,7 @@ $current_page = 'rooms';
                         
                         <?php for ($i = 1; $i <= $total_pages; $i++): ?>
                             <li class="page-item <?php echo $i == $page ? 'active' : ''; ?>">
-                                <a class="page-link" href="?page=<?php echo $i; ?><?php echo !empty($filter) && $filter != 'all' ? '&filter='.$filter : ''; ?><?php echo !empty($search) ? '&search='.$search : ''; ?>">
+                                <a class="page-link" href="?page=<?php echo $i; ?><?php echo !empty($filter) && $filter != 'all' ? '&filter='.$filter : ''; ?><?php echo !empty($search) ? '&search='.$search : ''; ?><?php echo $user_id ? "&user_id=$user_id" : ''; ?>">
                                     <?php echo $i; ?>
                                 </a>
                             </li>
@@ -442,7 +460,7 @@ $current_page = 'rooms';
                         
                         <?php if ($page < $total_pages): ?>
                             <li class="page-item">
-                                <a class="page-link" href="?page=<?php echo $page+1; ?><?php echo !empty($filter) && $filter != 'all' ? '&filter='.$filter : ''; ?><?php echo !empty($search) ? '&search='.$search : ''; ?>" aria-label="Next">
+                                <a class="page-link" href="?page=<?php echo $page+1; ?><?php echo !empty($filter) && $filter != 'all' ? '&filter='.$filter : ''; ?><?php echo !empty($search) ? '&search='.$search : ''; ?><?php echo $user_id ? "&user_id=$user_id" : ''; ?>" aria-label="Next">
                                     <span aria-hidden="true">&raquo;</span>
                                 </a>
                             </li>

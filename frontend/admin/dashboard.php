@@ -14,21 +14,25 @@ $page_title = "Dashboard";
 // Tổng số phòng
 $sql_rooms = "SELECT COUNT(*) as total_rooms FROM rooms";
 $result_rooms = mysqli_query($conn, $sql_rooms);
+if (!$result_rooms) die("Lỗi truy vấn rooms: " . mysqli_error($conn));
 $total_rooms = mysqli_fetch_assoc($result_rooms)['total_rooms'];
 
 // Phòng chờ duyệt
 $sql_pending = "SELECT COUNT(*) as pending_rooms FROM rooms WHERE status = 'pending'";
 $result_pending = mysqli_query($conn, $sql_pending);
+if (!$result_pending) die("Lỗi truy vấn pending rooms: " . mysqli_error($conn));
 $pending_rooms = mysqli_fetch_assoc($result_pending)['pending_rooms'];
 
 // Tổng số người dùng
 $sql_users = "SELECT COUNT(*) as total_users FROM user";
 $result_users = mysqli_query($conn, $sql_users);
+if (!$result_users) die("Lỗi truy vấn users: " . mysqli_error($conn));
 $total_users = mysqli_fetch_assoc($result_users)['total_users'];
 
 // Tổng lượt truy cập (giả sử có bảng visits)
-$sql_visits = "SELECT COUNT(*) as total_visits FROM room_images"; // Tạm dùng room_images để lấy số lượng
+$sql_visits = "SELECT COUNT(*) as total_visits FROM room_images"; // Gợi ý: Nên có bảng visits riêng
 $result_visits = mysqli_query($conn, $sql_visits);
+if (!$result_visits) die("Lỗi truy vấn visits: " . mysqli_error($conn));
 $total_visits = mysqli_fetch_assoc($result_visits)['total_visits'];
 
 // Danh sách phòng mới nhất
@@ -38,6 +42,7 @@ $sql_latest_rooms = "SELECT r.*, u.username
                     ORDER BY r.created_at DESC 
                     LIMIT 5";
 $result_latest_rooms = mysqli_query($conn, $sql_latest_rooms);
+if (!$result_latest_rooms) die("Lỗi truy vấn latest rooms: " . mysqli_error($conn));
 
 // Include header
 include __DIR__ . "/includes/header.php";

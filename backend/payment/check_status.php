@@ -36,6 +36,21 @@ if ($payment) {
         $stmt = mysqli_prepare($conn, $update_sql);
         mysqli_stmt_bind_param($stmt, "s", $payment_code);
         mysqli_stmt_execute($stmt);
+        
+        // Cập nhật trạng thái gói đăng ký
+        $get_subscription_sql = "SELECT subscription_id FROM payments WHERE payment_code = ?";
+        $stmt = mysqli_prepare($conn, $get_subscription_sql);
+        mysqli_stmt_bind_param($stmt, "s", $payment_code);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $subscription_data = mysqli_fetch_assoc($result);
+        
+        if ($subscription_data && isset($subscription_data['subscription_id'])) {
+            $update_subscription_sql = "UPDATE user_subscriptions SET status = 'active', updated_at = NOW() WHERE id = ?";
+            $stmt = mysqli_prepare($conn, $update_subscription_sql);
+            mysqli_stmt_bind_param($stmt, "i", $subscription_data['subscription_id']);
+            mysqli_stmt_execute($stmt);
+        }
     }
     
     echo json_encode([

@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
 
-                const url = `${getBaseUrl()}/frontend/room/filter_rooms.php?location=${encodeURIComponent(location)}&type=${encodeURIComponent(type)}&price=${encodeURIComponent(price)}`;
+                const url = `${getBaseUrl()}../../frontend/room/filter_rooms.php?location=${encodeURIComponent(location)}&type=${encodeURIComponent(type)}&price=${encodeURIComponent(price)}`;
                 window.location.href = url;
             } catch (error) {
                 console.error('Lỗi khi xử lý form tìm kiếm:', error);
@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             // Tạo URL với base URL
-            let url = `${getBaseUrl()}/frontend/room/filter_rooms.php?location=${encodeURIComponent(location)}&type=${encodeURIComponent(type)}&price=${encodeURIComponent(price)}`;
+            let url = `${getBaseUrl()}../../frontend/room/filter_rooms.php?location=${encodeURIComponent(location)}&type=${encodeURIComponent(type)}&price=${encodeURIComponent(price)}`;
             
             if (district) {
                 url += `&district=${encodeURIComponent(district)}`;

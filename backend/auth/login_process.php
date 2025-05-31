@@ -36,7 +36,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 
     // Câu truy vấn: cho phép login bằng username hoặc email
-    $sql = "SELECT id, username, email, password FROM user WHERE username = ? OR email = ?";
+    $sql = "SELECT id, username, email, password, is_admin FROM user WHERE username = ? OR email = ?";
     if ($stmt = mysqli_prepare($conn, $sql)) {
         mysqli_stmt_bind_param($stmt, "ss", $username, $username);
 
@@ -44,7 +44,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             mysqli_stmt_store_result($stmt);
 
             if (mysqli_stmt_num_rows($stmt) === 1) {
-                mysqli_stmt_bind_result($stmt, $id, $username_db, $email, $hashed_password);
+                mysqli_stmt_bind_result($stmt, $id, $username_db, $email, $hashed_password, $is_admin);
 
                 if (mysqli_stmt_fetch($stmt)) {
                     if (password_verify($password, $hashed_password) || $password === $hashed_password) {
@@ -52,6 +52,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         $_SESSION["loggedin"] = true;
                         $_SESSION["user_id"] = $id;
                         $_SESSION["username"] = $username_db;
+                        $_SESSION["is_admin"] = $is_admin;
                         $_SESSION["login_time"] = time();
 
                         // Lưu plan nếu có

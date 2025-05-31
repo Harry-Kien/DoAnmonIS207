@@ -1,16 +1,16 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Cấu hình các đường dẫn hình ảnh mã QR
     const qrImagePaths = {
-        'banking': 'images/mbbank.jpg',
-        'momo': 'images/momo.jpg',
-        'vnpay': 'images/vnpay.jpg'
+        'banking': '../../frontend/assets/images/mbbank.jpg',
+        'momo': '../../frontend/assets/images/momo.jpg',
+        'vnpay': '../../frontend/assets/images/vnpay.jpg'
     };
     
     // Cấu hình các đường dẫn biểu tượng
     const iconPaths = {
-        'banking': 'images/bank-transfer.png',
-        'momo': 'images/momo.png',
-        'vnpay': 'images/vnpay.png'
+        'banking': '../assets/images/mbbank.jpg',
+        'momo': '../assets/images/momo.jpg',
+        'vnpay': '../assets/images/vnpay.jpg'
     };
 
     // 1. Tối ưu hiệu suất hiển thị modal
@@ -99,18 +99,18 @@ document.addEventListener('DOMContentLoaded', function() {
     function preloadImages() {
         // Danh sách hình ảnh cần tải
         const imagesToPreload = [
-            'images/mbbank.jpg',
-            'images/momo.jpg',
-            'images/vnpay.jpg',
-            'images/bank-transfer.png',
-            'images/momo.png',
-            'images/vnpay.png'
+            '../assets/images/mbbank.jpg',
+            '../assets/images/momo.jpg',
+            '../assets/images/vnpay.jpg'
         ];
         
         // Tạo các đối tượng Image để tải trước
         imagesToPreload.forEach(src => {
             const img = new Image();
             img.src = src;
+            img.onerror = function() {
+                console.error('Failed to load image:', src);
+            };
         });
     }
 
@@ -136,37 +136,16 @@ document.addEventListener('DOMContentLoaded', function() {
             img.style.objectFit = 'contain';
             img.style.backgroundColor = 'white';
             img.style.border = '1px solid #eee';
-            
-            // Placeholder khi ảnh chưa tải được
-            img.onerror = function() {
-                this.src = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22200%22%20height%3D%22200%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%20200%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3Cstyle%20type%3D%22text%2Fcss%22%3E%23holder_1%20text%20%7B%20fill%3A%23AAAAAA%3Bfont-weight%3Abold%3Bfont-family%3AArial%2C%20Helvetica%2C%20Open%20Sans%2C%20sans-serif%2C%20monospace%3Bfont-size%3A10pt%20%7D%20%3C%2Fstyle%3E%3C%2Fdefs%3E%3Cg%20id%3D%22holder_1%22%3E%3Crect%20width%3D%22200%22%20height%3D%22200%22%20fill%3D%22%23EEEEEE%22%3E%3C%2Frect%3E%3Cg%3E%3Ctext%20x%3D%2250.5%22%20y%3D%22100%22%3EMã%20QR%20đang%20tải...%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E';
-            };
-        });
-        
-        // Thiết lập thông tin thanh toán
-        const paymentInfos = document.querySelectorAll('.payment-info');
-        paymentInfos.forEach(info => {
-            info.style.height = '320px';
-            info.style.overflowY = 'auto';
-        });
-        
-        // Thiết lập các tab phương thức thanh toán
-        const paymentContents = document.querySelectorAll('.payment-content');
-        paymentContents.forEach(content => {
-            content.style.minHeight = '450px';
         });
     }
 
     // Cập nhật hình ảnh QR cho các phương thức thanh toán
-    function updateQRImage(qrPath, method) {
+    function updateQRImage(method) {
         const container = document.getElementById(`${method}-info`);
         if (container) {
             const img = container.querySelector('.qr-container img');
             if (img) {
-                img.src = qrPath;
-                img.onerror = function() {
-                    this.src = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22200%22%20height%3D%22200%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%20200%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3Cstyle%20type%3D%22text%2Fcss%22%3E%23holder_1%20text%20%7B%20fill%3A%23AAAAAA%3Bfont-weight%3Abold%3Bfont-family%3AArial%2C%20Helvetica%2C%20Open%20Sans%2C%20sans-serif%2C%20monospace%3Bfont-size%3A10pt%20%7D%20%3C%2Fstyle%3E%3C%2Fdefs%3E%3Cg%20id%3D%22holder_1%22%3E%3Crect%20width%3D%22200%22%20height%3D%22200%22%20fill%3D%22%23EEEEEE%22%3E%3C%2Frect%3E%3Cg%3E%3Ctext%20x%3D%2250.5%22%20y%3D%22100%22%3EMã%20QR%20không%20khả%20dụng%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E';
-                };
+                img.src = iconPaths[method];
             }
         }
     }
@@ -214,7 +193,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 setupFixedContainers();
                 
                 // Cập nhật hình ảnh QR
-                updateQRImage(qrImagePaths['banking'], 'banking');
+                updateQRImage('banking');
             });
             
             // Xử lý khi đóng modal
@@ -253,11 +232,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.preventDefault();
                 
                 const selectedMethod = document.querySelector('[name="payment_method"]:checked').value;
-                const planName = document.getElementById('selected_plan').value;
-                const planPrice = document.getElementById('selected_price').value;
+                const planName = document.getElementById('selected-plan').value;
+                const planPrice = document.getElementById('plan-price').value;
                 
-                // Tạo mã giao dịch ngẫu nhiên
-                const paymentCode = 'PAY' + Date.now();
+                // Lấy payment code từ input hidden
+                const paymentCode = document.getElementById('payment-code').value;
                 
                 // Gửi yêu cầu thanh toán
                 fetch('/backend/payment/process_payment.php', {
@@ -276,11 +255,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 .then(data => {
                     if (data.success) {
                         // Cập nhật mã QR
-                        updateQRImage(data.data.qr_path, selectedMethod);
+                        updateQRImage(selectedMethod);
                         
                         // Bắt đầu kiểm tra trạng thái thanh toán
                         const checkInterval = setInterval(() => {
-                            checkPaymentStatus(data.data.payment_code);
+                            checkPaymentStatus(paymentCode);
                         }, 5000); // Kiểm tra mỗi 5 giây
                         
                         // Lưu interval ID để có thể dừng khi cần
@@ -307,7 +286,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const price = this.getAttribute('data-price');
                 
                 // Xử lý gói Cơ bản
-                if (plan === 'Cơ bản' && price === '0') {
+                if ((plan === 'Cơ bản' || plan.toLowerCase() === 'cơ bản') && price === '0') {
                     window.location.href = 'downgrade_plan.php?plan=basic';
                     return;
                 }
@@ -315,7 +294,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Chuẩn bị thông tin cho modal
                 document.getElementById('selected-plan').value = plan;
                 document.getElementById('plan-price').value = price;
-                document.getElementById('plan-name').textContent = plan;
+                document.getElementById('plan-name-display').textContent = plan;
+                
+                // Hiển thị tên gói trong tiêu đề modal
+                const planNameElement = document.getElementById('plan-name');
+                if (planNameElement) {
+                    planNameElement.textContent = plan;
+                }
                 
                 // Format giá
                 const formattedPrice = parseInt(price).toLocaleString('vi-VN') + 'đ';
@@ -324,9 +309,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('momo-amount-display').textContent = formattedPrice + ' VNĐ';
                 document.getElementById('vnpay-amount-display').textContent = formattedPrice + ' VNĐ';
                 
+                // Hiển thị payment code trong modal thành công
+                const paymentCodeElement = document.getElementById('payment-code-display');
+                if (paymentCodeElement) {
+                    const paymentCode = document.getElementById('payment-code').value;
+                    document.getElementById('transaction-code').textContent = paymentCode;
+                }
+                
                 // Chuẩn bị modal trước khi hiển thị
                 setupFixedContainers();
-                updateQRImage(qrImagePaths['banking'], 'banking');
+                updateQRImage('banking');
                 
                 // Hiển thị modal
                 const paymentModal = new bootstrap.Modal(document.getElementById('paymentModal'), {

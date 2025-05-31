@@ -37,9 +37,9 @@ $user_id = $_SESSION['user_id'];
 
 // Xác định mã gói
 $plan_code = 'basic';
-if ($plan === 'Tiêu chuẩn') {
+if ($plan === 'Tiêu chuẩn' || strtolower($plan) === 'tiêu chuẩn' || $plan === 'standard') {
     $plan_code = 'standard';
-} elseif ($plan === 'Cao cấp') {
+} elseif ($plan === 'Cao cấp' || strtolower($plan) === 'cao cấp' || $plan === 'premium') {
     $plan_code = 'premium';
 }
 
@@ -145,29 +145,3 @@ try {
 
 mysqli_close($conn);
 exit;
-?>
-
-<!-- Modal xác nhận thanh toán -->
-<div class="modal fade" id="confirmPaymentModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title">Xác nhận thanh toán</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="text-center mb-4">
-                    <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
-                    <h4 class="mt-3">Cảm ơn bạn đã thanh toán!</h4>
-                    <p>Chúng tôi đã nhận được thông tin thanh toán của bạn và đang xử lý. Gói dịch vụ của bạn sẽ được kích hoạt trong thời gian sớm nhất.</p>
-                </div>
-                <div class="alert alert-info">
-                    <p class="mb-0"><strong>Mã giao dịch:</strong> <span id="transaction-code"></span></p>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Đóng</button>
-            </div>
-        </div>
-    </div>
-</div>

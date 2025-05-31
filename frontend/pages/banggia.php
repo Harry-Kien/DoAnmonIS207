@@ -53,7 +53,7 @@ include '../../frontend/pages/header.php';
 <?php include __DIR__ . '/../components/faq-section.php'; ?>
 
 <!-- Modal thanh toán -->
-<?php include __DIR__ . '/../components/paymet-modal.php'; ?>
+<?php include __DIR__ . '/../components/payment-modal.php'; ?>
 
 
 

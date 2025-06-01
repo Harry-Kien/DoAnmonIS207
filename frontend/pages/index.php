@@ -69,7 +69,7 @@ include 'header.php';
 
             <!-- Form tìm kiếm -->
             <div class="search-form bg-white p-4 rounded shadow mt-4">
-                <form action="../room/filter_rooms.php" method="get" id="search-form">
+                <form action="search.php" method="get" id="search-form">
                     <div class="row g-3">
                         <div class="col-md-4">
                             <select class="form-select" name="location">

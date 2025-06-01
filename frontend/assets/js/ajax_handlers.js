@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Hàm helper để lấy base URL của website
     function getBaseUrl() {
-        return window.location.protocol + '//' + window.location.host + '/IS207-hoomseeker';
+        return window.location.protocol + '//' + window.location.host + '/DoAnmonIS207'; // Sửa tên thư mục dự án
     }
 
     // Hàm validate input
@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
 
-                const url = `${getBaseUrl()}../../frontend/room/filter_rooms.php?location=${encodeURIComponent(location)}&type=${encodeURIComponent(type)}&price=${encodeURIComponent(price)}`;
+                const url = `${getBaseUrl()}/frontend/pages/search.php?location=${encodeURIComponent(location)}&type=${encodeURIComponent(type)}&price=${encodeURIComponent(price)}`; // Sửa cách ghép đường dẫn
                 window.location.href = url;
             } catch (error) {
                 console.error('Lỗi khi xử lý form tìm kiếm:', error);
@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             // Tạo URL với base URL
-            let url = `${getBaseUrl()}../../frontend/room/filter_rooms.php?location=${encodeURIComponent(location)}&type=${encodeURIComponent(type)}&price=${encodeURIComponent(price)}`;
+            let url = `${getBaseUrl()}/frontend/pages/search.php?location=${encodeURIComponent(location)}&type=${encodeURIComponent(type)}&price=${encodeURIComponent(price)}`; // Sửa cách ghép đường dẫn
             
             if (district) {
                 url += `&district=${encodeURIComponent(district)}`;

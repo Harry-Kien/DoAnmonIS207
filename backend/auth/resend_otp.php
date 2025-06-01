@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once "../../backend/config/config.php"; // Add config file include
 header('Content-Type: application/json');
 
 // Nhận email từ request
@@ -33,13 +34,13 @@ try {
     $mail->isSMTP();
     $mail->Host = 'smtp.gmail.com';
     $mail->SMTPAuth = true;
-    $mail->Username = 'your-email@gmail.com'; // Thay bằng email của bạn
-    $mail->Password = 'your-app-password'; // Thay bằng mật khẩu ứng dụng
+    $mail->Username = 'kientrantrung3@gmail.com';
+    $mail->Password = 'kjgr qnvy axtn iosd';
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
     $mail->Port = 587;
 
     // Người nhận
-    $mail->setFrom('your-email@gmail.com', 'Homeseeker');
+    $mail->setFrom('kientrantrung3@gmail.com', 'Homeseeker');
     $mail->addAddress($email, $_SESSION['registration']['fullname']);
 
     // Nội dung

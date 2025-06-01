@@ -1,21 +1,22 @@
 <?php
 session_start();
-require_once "../../config/db.php";
-
+require_once "../../backend/config/config.php"; // Updated path to the correct config file
 header('Content-Type: application/json');
 
 // Nhận dữ liệu từ form
 $username = $_POST['username'] ?? '';
 $email = $_POST['email'] ?? '';
-$fullname = $_POST['fullname'] ?? '';
+$fullname = $_POST['full_name'] ?? '';
 $phone = $_POST['phone'] ?? '';
 $password = $_POST['password'] ?? '';
 
 // Kiểm tra username và email đã tồn tại chưa
-$stmt = $pdo->prepare("SELECT id FROM users WHERE username = ? OR email = ?");
-$stmt->execute([$username, $email]);
-if ($stmt->rowCount() > 0) {
-    $user = $stmt->fetch();
+$stmt = mysqli_prepare($conn, "SELECT id FROM user WHERE username = ? OR email = ?");
+mysqli_stmt_bind_param($stmt, "ss", $username, $email);
+mysqli_stmt_execute($stmt);
+mysqli_stmt_store_result($stmt);
+
+if (mysqli_stmt_num_rows($stmt) > 0) {
     echo json_encode([
         'success' => false,
         'message' => 'Tên đăng nhập hoặc email đã được sử dụng'
@@ -49,13 +50,13 @@ try {
     $mail->isSMTP();
     $mail->Host = 'smtp.gmail.com';
     $mail->SMTPAuth = true;
-    $mail->Username = 'your-email@gmail.com'; // Thay bằng email của bạn
-    $mail->Password = 'your-app-password'; // Thay bằng mật khẩu ứng dụng
+    $mail->Username = 'kientrantrung3@gmail.com';
+    $mail->Password = 'kjgr qnvy axtn iosd';
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
     $mail->Port = 587;
 
     // Người nhận
-    $mail->setFrom('your-email@gmail.com', 'Homeseeker');
+    $mail->setFrom('kientrantrung3@gmail.com', 'Homeseeker');
     $mail->addAddress($email, $fullname);
 
     // Nội dung

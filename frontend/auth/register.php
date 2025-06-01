@@ -34,8 +34,8 @@ include '../../frontend/pages/header.php';
                     <form action="../../backend/auth/register_process.php" method="post" autocomplete="off" id="registerForm">
                         <div id="registration-form">
                             <div class="mb-3">
-                                <label for="username" class="form-label">Tên đăng nhập</label>
-                                <input type="text" class="form-control" id="username" name="username" required>
+                                <label for="register_username" class="form-label">Tên đăng nhập</label>
+                                <input type="text" class="form-control" id="register_username" name="username" required>
                             </div>
                             <div class="mb-3">
                                 <label for="full_name" class="form-label">Họ và tên</label>
@@ -50,16 +50,16 @@ include '../../frontend/pages/header.php';
                                 <input type="tel" class="form-control" id="phone" name="phone" pattern="[0-9]{10,11}" required>
                             </div>
                             <div class="mb-3">
-                                <label for="password" class="form-label">Mật khẩu</label>
+                                <label for="register_password" class="form-label">Mật khẩu</label>
                                 <div class="input-group">
                                     <input type="password" 
                                            class="form-control" 
-                                           id="password" 
+                                           id="register_password" 
                                            name="password" 
                                            required 
                                            pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
                                            title="Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt">
-                                    <span class="input-group-text" style="cursor: pointer;" onclick="togglePasswordVisibility('password', this)">
+                                    <span class="input-group-text" style="cursor: pointer;" onclick="togglePasswordVisibility('register_password', this)">
                                         <i class="far fa-eye"></i>
                                     </span>
                                 </div>
@@ -110,7 +110,7 @@ include '../../frontend/pages/header.php';
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('registerForm');
-    const password = document.getElementById('password');
+    const password = document.getElementById('register_password');
 
     // Hàm kiểm tra mật khẩu hợp lệ
     function isValidPassword(pwd) {
@@ -125,50 +125,47 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Hàm kiểm tra form hợp lệ
     function validateForm() {
-        const usernameInput = document.getElementById('username');
-        const username = usernameInput ? usernameInput.value.trim() : '';
+        const username = document.getElementById('register_username').value.trim();
         const full_name = document.getElementById('full_name').value.trim();
         const email = document.getElementById('email').value.trim();
         const phone = document.getElementById('phone').value.trim();
-        const terms = document.getElementById('terms').checked;
         
-        // Log chi tiết
-        console.log('username:', username, '| full_name:', full_name, '| email:', email, '| phone:', phone, '| terms:', terms);
-        if (!usernameInput) {
-            alert('Không tìm thấy trường tên đăng nhập trong DOM!');
-            return false;
-        }
-        if (usernameInput.disabled || usernameInput.readOnly) {
-            alert('Trường tên đăng nhập đang bị disabled hoặc readonly!');
-            return false;
-        }
+        // Reset trạng thái lỗi
+        document.getElementById('register_username').style.border = '';
+
+        // Validate từng trường
         if (!username) {
-            usernameInput.style.border = '2px solid red';
+            document.getElementById('register_username').style.border = '1px solid red';
+            document.getElementById('register_username').focus();
             alert('Vui lòng nhập tên đăng nhập');
             return false;
-        } else {
-            usernameInput.style.border = '';
         }
+        
         if (!full_name) {
             alert('Vui lòng nhập họ và tên');
             return false;
         }
-        if (!email) {
-            alert('Vui lòng nhập email');
+        
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            alert('Vui lòng nhập email hợp lệ');
             return false;
         }
-        if (!phone) {
-            alert('Vui lòng nhập số điện thoại');
+        
+        if (!phone || !/^[0-9]{10,11}$/.test(phone)) {
+            alert('Vui lòng nhập số điện thoại hợp lệ (10-11 số)');
             return false;
         }
+        
         if (!isValidPassword(password.value)) {
             alert('Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt (@$!%*?&)');
             return false;
         }
-        if (!terms) {
+        
+        if (!document.getElementById('terms').checked) {
             alert('Vui lòng đồng ý với điều khoản dịch vụ');
             return false;
         }
+        
         return true;
     }
 
@@ -181,20 +178,26 @@ document.addEventListener('DOMContentLoaded', function() {
             method: 'POST',
             body: formData
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                document.getElementById('registration-form').style.display = 'none';
-                document.getElementById('otp-form').style.display = 'block';
-                alert('Mã OTP đã được gửi đến email của bạn');
-            } else {
-                alert(data.message || 'Có lỗi xảy ra khi gửi OTP');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Có lỗi xảy ra khi gửi OTP');
-        });
+        .then(response => {
+        // Check if the response is OK and not empty
+        if (!response.ok || response.headers.get('content-length') === '0') {
+            throw new Error('Empty or invalid response from server');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            document.getElementById('registration-form').style.display = 'none';
+            document.getElementById('otp-form').style.display = 'block';
+            alert('Mã OTP đã được gửi đến email của bạn');
+        } else {
+            alert(data.message || 'Có lỗi xảy ra khi gửi OTP');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Có lỗi xảy ra khi gửi OTP');
+});
     }
 
     // Hàm gửi lại OTP
@@ -221,7 +224,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Hàm để toggle hiển thị mật khẩu
+    // Hàm toggle hiển thị mật khẩu
     window.togglePasswordVisibility = function(inputId, toggleButton) {
         const input = document.getElementById(inputId);
         const icon = toggleButton.querySelector('i');

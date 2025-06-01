@@ -93,6 +93,12 @@ include 'header.php';
         $fav_stmt->execute();
         $fav_result = $fav_stmt->get_result();
         $favorites = $fav_result->fetch_all(MYSQLI_ASSOC);
+        
+        // Lấy thông báo của người dùng
+        require_once "../../backend/notifications/notification_handler.php";
+        $notificationHandler = new NotificationHandler($conn);
+        $notifications = $notificationHandler->getUserNotifications($_SESSION['user_id'], 5);
+        $unreadCount = $notificationHandler->getUnreadCount($_SESSION['user_id']);
         ?>
 
         <div class="row mb-4">
@@ -123,22 +129,101 @@ include 'header.php';
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h5 class="card-title mb-0">Thông báo</h5>
+                            <?php if ($unreadCount > 0): ?>
+                            <span class="badge bg-danger"><?php echo $unreadCount; ?> mới</span>
+                            <?php endif; ?>
                         </div>
 
-                        <div class="text-center py-4">
-                            <i class="fas fa-bell text-muted mb-3" style="font-size: 2.5rem;"></i>
-                            <p class="text-muted mb-0">Bạn không có thông báo mới nào</p>
-                        </div>
+                        <?php if (count($notifications) > 0): ?>
+                            <div class="notifications-list">
+                                <?php foreach ($notifications as $notification): ?>
+                                    <?php 
+                                    $icon = 'bell';
+                                    $color = 'primary';
+                                    
+                                    // Xác định icon và màu sắc dựa trên loại thông báo
+                                    switch ($notification['type']) {
+                                        case 'room_approved':
+                                            $icon = 'check-circle';
+                                            $color = 'success';
+                                            break;
+                                        case 'room_rejected':
+                                            $icon = 'times-circle';
+                                            $color = 'danger';
+                                            break;
+                                        case 'comment_received':
+                                            $icon = 'comment';
+                                            $color = 'info';
+                                            break;
+                                        case 'viewing_request':
+                                            $icon = 'calendar-check';
+                                            $color = 'warning';
+                                            break;
+                                        case 'system_maintenance':
+                                            $icon = 'wrench';
+                                            $color = 'secondary';
+                                            break;
+                                        case 'new_feature':
+                                            $icon = 'star';
+                                            $color = 'warning';
+                                            break;
+                                        case 'promotion':
+                                            $icon = 'gift';
+                                            $color = 'danger';
+                                            break;
+                                    }
+                                    ?>
+                                    <div class="notification-item p-2 mb-2 border-bottom <?php echo $notification['is_read'] ? '' : 'bg-light'; ?>" 
+                                         data-id="<?php echo $notification['id']; ?>"
+                                         data-type="<?php echo $notification['type']; ?>"
+                                         data-related-id="<?php echo $notification['related_id']; ?>"
+                                         style="cursor: pointer;">
+                                        <div class="d-flex">
+                                            <div class="me-3">
+                                                <i class="fas fa-<?php echo $icon; ?> text-<?php echo $color; ?> fa-lg"></i>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <h6 class="mb-1"><?php echo htmlspecialchars($notification['title']); ?></h6>
+                                                <p class="mb-1 small"><?php echo htmlspecialchars($notification['message']); ?></p>
+                                                <small class="text-muted">
+                                                    <?php echo date('d/m/Y H:i', strtotime($notification['created_at'])); ?>
+                                                </small>
+                                            </div>
+                                            <?php if (!$notification['is_read']): ?>
+                                            <div>
+                                                <span class="badge bg-primary">Mới</span>
+                                            </div>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                            
+                            <div class="text-center mt-3">
+                                <a href="../../frontend/notifications/all.php" class="btn btn-sm btn-outline-primary">Xem tất cả thông báo</a>
+                            </div>
+                        <?php else: ?>
+                            <div class="text-center py-4">
+                                <i class="fas fa-bell text-muted mb-3" style="font-size: 2.5rem;"></i>
+                                <p class="text-muted mb-0">Bạn không có thông báo mới nào</p>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="buttons">
-            <a href="../auth/reset_password.php" class="btn btn-warning">Đổi mật khẩu</a>
+            <a href="../auth/reset_password.php" class="btn btn-warning mb-3">Đổi mật khẩu</a>
+            
             <?php if (isset($_SESSION['is_admin']) && $_SESSION['is_admin'] == 1): ?>
-            <a href="../../frontend/admin/home.php" class="btn btn-primary">Trang quản trị</a>
+            <div class="d-grid gap-2 mb-3">
+                <a href="../../frontend/admin/home.php" class="btn btn-danger btn-lg">
+                    <i class="fas fa-user-shield me-2"></i>Truy cập Trang Quản Trị
+                </a>
+            </div>
             <?php endif; ?>
+            
             <a href="../auth/logout.php" class="btn btn-outline-danger">Đăng xuất</a>
         </div>
     </div>
@@ -148,3 +233,65 @@ include 'header.php';
 // Include footer
 include 'footer.php';
 ?>
+
+<!-- JavaScript for notifications -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add click event to notification items
+    const notificationItems = document.querySelectorAll('.notification-item');
+    
+    notificationItems.forEach(item => {
+        item.addEventListener('click', function() {
+            const notificationId = this.getAttribute('data-id');
+            
+            // Mark notification as read
+            fetch('../../backend/notifications/mark_as_read.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'notification_id=' + notificationId
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Remove "Mới" badge
+                    const badge = this.querySelector('.badge');
+                    if (badge) {
+                        badge.remove();
+                    }
+                    
+                    // Remove highlight
+                    this.classList.remove('bg-light');
+                    
+                    // Update unread count
+                    const unreadBadge = document.querySelector('.card-title + .badge');
+                    if (unreadBadge) {
+                        const currentCount = parseInt(unreadBadge.textContent);
+                        if (currentCount > 1) {
+                            unreadBadge.textContent = (currentCount - 1) + ' mới';
+                        } else {
+                            unreadBadge.remove();
+                        }
+                    }
+                    
+                    // If notification has related_id, navigate to that page
+                    if (this.hasAttribute('data-related-id') && this.hasAttribute('data-type')) {
+                        const relatedId = this.getAttribute('data-related-id');
+                        const type = this.getAttribute('data-type');
+                        
+                        if (type === 'room_approved' || type === 'room_rejected') {
+                            window.location.href = '../../frontend/room/chi-tiet-phong.php?id=' + relatedId;
+                        } else if (type === 'comment_received') {
+                            window.location.href = '../../frontend/room/chi-tiet-phong.php?id=' + relatedId + '#comments';
+                        } else if (type === 'viewing_request') {
+                            window.location.href = '../../frontend/room/my_rooms.php';
+                        }
+                    }
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    });
+});
+</script>

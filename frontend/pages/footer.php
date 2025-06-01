@@ -177,6 +177,9 @@
     </div>
 </footer>
 
+<!-- Chatbot -->
+<?php include_once __DIR__ . '/../components/chatbot.php'; ?>
+
 <!-- Add CSS to ensure proper styling -->
 <style>
     .modal-content {

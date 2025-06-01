@@ -38,6 +38,13 @@ include '../pages/header.php';
         </div>
     <?php endif; ?>
     
+    <?php if (isset($_SESSION['error_message'])): ?>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <?php echo $_SESSION['error_message']; unset($_SESSION['error_message']); ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    <?php endif; ?>
+    
     <div class="d-flex justify-content-end mb-4">
         <a href="../../backend/rooms/dang_phong.php" class="btn btn-warning">
             <i class="fas fa-plus-circle me-2"></i>Đăng tin mới

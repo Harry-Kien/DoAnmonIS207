@@ -1,11 +1,11 @@
 <?php
 session_start();
 $page_title = "Quản lý phòng trọ";
-require_once "../config.php";
+require_once "../config/config.php";
 
 // Kiểm tra đăng nhập admin
 if (!isset($_SESSION["admin_loggedin"]) || $_SESSION["admin_loggedin"] !== true) {
-    header("Location: index.php");
+    header("Location: ../../frontend/admin/home.php");
     exit;
 }
 
@@ -42,8 +42,8 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
             $result_images = $stmt_images->get_result();
             
             while ($image = $result_images->fetch_assoc()) {
-                if (file_exists("../" . $image['image_url'])) {
-                    unlink("../" . $image['image_url']);
+                if (file_exists("../../" . $image['image_url'])) {
+                    unlink("../../" . $image['image_url']);
                 }
             }
             
@@ -182,7 +182,7 @@ include "includes/header.php";
                                 <td><?php echo date('d/m/Y', strtotime($row['created_at'])); ?></td>
                                 <td>
                                     <div class="btn-group">
-                                        <a href="../chi-tiet-phong.php?id=<?php echo $row['id']; ?>" target="_blank" class="btn btn-sm btn-info" title="Xem">
+                                        <a href="../../frontend/chi-tiet-phong.php?id=<?php echo $row['id']; ?>" target="_blank" class="btn btn-sm btn-info" title="Xem">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                         <?php if ($row['status'] != 'approved'): ?>
@@ -253,7 +253,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'view' && isset($_GET['id'])) {
                                 <?php if (count($images) > 0): ?>
                                     <?php foreach ($images as $index => $image): ?>
                                         <div class="carousel-item <?php echo $index === 0 ? 'active' : ''; ?>">
-                                            <img src="../<?php echo htmlspecialchars($image['image_url']); ?>" class="d-block w-100" alt="Hình ảnh phòng">
+                                            <img src="../../<?php echo htmlspecialchars($image['image_url']); ?>" class="d-block w-100" alt="Hình ảnh phòng">
                                         </div>
                                     <?php endforeach; ?>
                                 <?php else: ?>

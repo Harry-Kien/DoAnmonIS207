@@ -299,7 +299,7 @@ $current_page = 'dashboard';
                                         <i class="fas fa-eye"></i>
                                     </a>
                                     <?php if ($row['status'] == 'pending'): ?>
-                                        <a href="approve_room.php?id=<?php echo $row['id']; ?>" class="btn btn-success btn-sm action-btn" title="Duyệt">
+                                        <a href="../../backend/admin/approve_rooms.php?id=<?php echo $row['id']; ?>&action=approve" class="btn btn-success btn-sm action-btn" title="Duyệt">
                                             <i class="fas fa-check"></i>
                                         </a>
                                     <?php endif; ?>

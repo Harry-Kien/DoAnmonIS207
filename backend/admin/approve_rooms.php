@@ -3,7 +3,7 @@ session_start();
 
 // Kiểm tra người dùng đã đăng nhập và có quyền admin
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['is_admin']) || $_SESSION['is_admin'] != 1) {
-    header("Location: /frontend/auth/login.php");
+    header("Location: ../../frontend/auth/login.php");
     exit();
 }
 
@@ -18,7 +18,7 @@ if (isset($_GET['id']) && isset($_GET['action'])) {
     // Xác thực dữ liệu
     if (!is_numeric($room_id)) {
         $_SESSION['error_message'] = "ID phòng không hợp lệ";
-        header("Location: /backend/payment/admin_dashboard.php");
+        header("Location: ../../backend/admin/rooms.php");
         exit();
     }
     
@@ -31,7 +31,7 @@ if (isset($_GET['id']) && isset($_GET['action'])) {
         $message = "Đã từ chối tin đăng!";
     } else {
         $_SESSION['error_message'] = "Hành động không hợp lệ";
-        header("Location: /backend/payment/admin_dashboard.php");
+        header("Location: ../../backend/admin/rooms.php");
         exit();
     }
     
@@ -51,11 +51,11 @@ if (isset($_GET['id']) && isset($_GET['action'])) {
     $conn->close();
     
     // Chuyển hướng về trang dashboard
-    header("Location: /backend/payment/admin_dashboard.php");
+    header("Location: ../../backend/admin/rooms.php");
     exit();
 } else {
     $_SESSION['error_message'] = "Thiếu thông tin";
-    header("Location: /backend/payment/admin_dashboard.php");
+    header("Location: ../../backend/admin/rooms.php");
     exit();
 }
 ?>

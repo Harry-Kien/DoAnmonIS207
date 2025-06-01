@@ -136,6 +136,9 @@ include 'header.php';
 
         <div class="buttons">
             <a href="../auth/reset_password.php" class="btn btn-warning">Đổi mật khẩu</a>
+            <?php if (isset($_SESSION['is_admin']) && $_SESSION['is_admin'] == 1): ?>
+            <a href="../../frontend/admin/home.php" class="btn btn-primary">Trang quản trị</a>
+            <?php endif; ?>
             <a href="../auth/logout.php" class="btn btn-outline-danger">Đăng xuất</a>
         </div>
     </div>

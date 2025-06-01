@@ -54,6 +54,7 @@ try {
     $mail->Password = 'kjgr qnvy axtn iosd';
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
     $mail->Port = 587;
+    $mail->CharSet = 'UTF-8';
 
     // Người nhận
     $mail->setFrom('kientrantrung3@gmail.com', 'Homeseeker');

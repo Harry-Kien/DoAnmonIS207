@@ -66,12 +66,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && !isset($_POST['resend_otp'])) {
                         unset($_SESSION['reset_email']);
                         unset($_SESSION['reset_user_id']);
                         
-                        // Ghi log thay đổi mật khẩu
-                        $log_sql = "INSERT INTO password_change_log (user_id, change_type) VALUES (?, 'reset')";
-                        $log_stmt = mysqli_prepare($conn, $log_sql);
-                        mysqli_stmt_bind_param($log_stmt, "i", $user_id);
-                        mysqli_stmt_execute($log_stmt);
-                        
                         // Chuyển hướng đến trang đăng nhập
                         $_SESSION['reset_success'] = "Mật khẩu đã được đặt lại thành công.";
                         header("Location: login.php");

@@ -31,20 +31,30 @@ try {
     // Bắt đầu transaction
     mysqli_begin_transaction($conn);
 
+    // Lưu thông tin người dùng để sử dụng sau khi insert
+    $username = $_SESSION['registration']['username'];
+    $email = $_SESSION['registration']['email'];
+    $fullname = $_SESSION['registration']['fullname'];
+    $phone = $_SESSION['registration']['phone'];
+    $password_hash = $_SESSION['registration']['password'];
+
     // Thêm user mới vào database với các trường chính xác
     $sql = "INSERT INTO user (username, email, full_name, phone, password, created_at, updated_at, status, is_admin) 
             VALUES (?, ?, ?, ?, ?, NOW(), NOW(), 1, 0)";
     $stmt = mysqli_prepare($conn, $sql);
     
     mysqli_stmt_bind_param($stmt, "sssss", 
-        $_SESSION['registration']['username'],
-        $_SESSION['registration']['email'],
-        $_SESSION['registration']['fullname'], // fullname được lưu vào full_name
-        $_SESSION['registration']['phone'],
-        $_SESSION['registration']['password']
+        $username,
+        $email,
+        $fullname, // fullname được lưu vào full_name
+        $phone,
+        $password_hash
     );
     
     mysqli_stmt_execute($stmt);
+    
+    // Lấy ID của user vừa tạo
+    $user_id = mysqli_insert_id($conn);
 
     // Commit transaction
     mysqli_commit($conn);
@@ -52,8 +62,16 @@ try {
     // Xóa dữ liệu đăng ký khỏi session
     unset($_SESSION['registration']);
 
-    // Chuyển hướng đến trang đăng nhập với thông báo thành công
-    header("location: ../../frontend/auth/login.php?success=Đăng ký thành công! Vui lòng đăng nhập.");
+    // Thiết lập session đăng nhập
+    $_SESSION['loggedin'] = true;
+    $_SESSION['user_id'] = $user_id;
+    $_SESSION['username'] = $username;
+    $_SESSION['email'] = $email;
+    $_SESSION['full_name'] = $fullname;
+    $_SESSION['is_admin'] = 0; // Người dùng mới không phải admin
+
+    // Chuyển hướng đến trang chính sau khi đăng nhập thành công
+    header("location: ../../frontend/pages/index.php?welcome=1");
     exit;
 } catch (Exception $e) {
     // Rollback transaction nếu có lỗi

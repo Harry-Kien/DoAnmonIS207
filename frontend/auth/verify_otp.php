@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once "config.php";
+require_once "../../backend/config/config.php";
 
 // Kiểm tra xem người dùng có quyền truy cập trang này không
 if (!isset($_SESSION['reset_email'])) {
@@ -33,13 +33,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 mysqli_stmt_store_result($stmt);
                 
                 if (mysqli_stmt_num_rows($stmt) == 1) {
-                    mysqli_stmt_bind_result($stmt, $user_id, $hashed_otp, $otp_expiry);
+                    mysqli_stmt_bind_result($stmt, $user_id, $db_otp, $otp_expiry);
                     mysqli_stmt_fetch($stmt);
                     
                     // Kiểm tra OTP còn hiệu lực không
                     if (strtotime($otp_expiry) > time()) {
-                        // Kiểm tra OTP có khớp không
-                        if (password_verify($otp, $hashed_otp)) {
+                        // Kiểm tra OTP có khớp không (so sánh trực tiếp)
+                        if ($otp == $db_otp) {
                             // OTP đúng, chuyển đến trang đặt lại mật khẩu
                             $_SESSION['reset_user_id'] = $user_id;
                             header("location: reset_password.php");
@@ -63,7 +63,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 // Thêm phần header
 $page_title = "Xác Nhận OTP";
-include 'header.php';
+include "../../frontend/pages/header.php";
 ?>
 
 <div class="container py-5">
@@ -100,7 +100,10 @@ include 'header.php';
                         </div>
                     </form>
                     <div class="mt-3 text-center">
-                        <a href="#" id="resendOTP" class="text-decoration-none">Gửi lại mã OTP</a>
+                        <form action="forgot_password.php" method="post">
+                            <input type="hidden" name="email" value="<?php echo $_SESSION['reset_email']; ?>">
+                            <button type="submit" class="btn btn-link p-0">Gửi lại mã OTP</button>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -108,14 +111,7 @@ include 'header.php';
     </div>
 </div>
 
-<script>
-document.getElementById('resendOTP')?.addEventListener('click', function(e) {
-    e.preventDefault();
-    window.location.href = 'resend_otp.php';
-});
-</script>
-
 <?php
 // Thêm phần footer
-include 'footer.php';
+include "../../frontend/pages/footer.php";
 ?>

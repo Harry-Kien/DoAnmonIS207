@@ -10,6 +10,9 @@ if (session_status() == PHP_SESSION_NONE) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $page_title ?? 'Homeseeker - Tìm nhà trọ, phòng trọ uy tín'; ?></title>
+    <!-- Favicon -->
+    <link rel="icon" href="../../frontend/assets/images/favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="../../frontend/assets/images/favicon.ico" type="image/x-icon">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Bootstrap CSS -->
@@ -107,7 +110,7 @@ if (session_status() == PHP_SESSION_NONE) {
                                         <button type="submit" class="btn btn-warning">Đăng nhập</button>
                                     </div>
                                     <div class="mt-3 text-center">
-                                        <a href="/frontend/auth/reset_password.php" class="text-decoration-none">Quên mật khẩu?</a>
+                                        <a href="../../frontend/auth/forgot_password.php" class="text-decoration-none">Quên mật khẩu?</a>
                                         <hr>
                                         <p class="mb-0">Chưa có tài khoản? <a href="../../frontend/auth/register.php" class="text-decoration-none">Đăng ký</a></p>
                                     </div>

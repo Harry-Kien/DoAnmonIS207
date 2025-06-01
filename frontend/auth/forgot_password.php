@@ -1,6 +1,10 @@
 <?php
 session_start();
 require_once "../../backend/config/config.php";
+// Thêm PHPMailer ở đầu file
+require '../../vendor/autoload.php';
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
 
 $email = "";
 $email_err = "";
@@ -15,7 +19,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // Kiểm tra email có tồn tại không
     if (empty($email_err)) {
-        $sql = "SELECT id, username FROM user WHERE email = ?";
+        $sql = "SELECT id, username, full_name FROM user WHERE email = ?";
         
         if ($stmt = mysqli_prepare($conn, $sql)) {
             mysqli_stmt_bind_param($stmt, "s", $param_email);
@@ -25,7 +29,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 mysqli_stmt_store_result($stmt);
                 
                 if (mysqli_stmt_num_rows($stmt) == 1) {
-                    mysqli_stmt_bind_result($stmt, $user_id, $username);
+                    mysqli_stmt_bind_result($stmt, $user_id, $username, $fullname);
                     mysqli_stmt_fetch($stmt);
                     
                     // Tạo OTP
@@ -38,23 +42,44 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         mysqli_stmt_bind_param($update_stmt, "ssi", $otp, $otp_expiry, $user_id);
                         
                         if (mysqli_stmt_execute($update_stmt)) {
-                            // Gửi OTP qua email
-                            $subject = "Mã OTP Đặt Lại Mật Khẩu - Homeseeker";
-                            $message = "Xin chào $username,\n\n";
-                            $message .= "Mã OTP đặt lại mật khẩu của bạn là: $otp\n";
-                            $message .= "Mã này sẽ hết hạn sau 15 phút.\n";
-                            $message .= "Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.";
-                            
-                            $headers = "From: support@homeseeker.com\r\n";
-                            
-                            if (mail($email, $subject, $message, $headers)) {
+                            // Gửi OTP qua email sử dụng PHPMailer
+                            $mail = new PHPMailer(true);
+
+                            try {
+                                // Cấu hình server
+                                $mail->isSMTP();
+                                $mail->Host = 'smtp.gmail.com';
+                                $mail->SMTPAuth = true;
+                                $mail->Username = 'kientrantrung3@gmail.com';
+                                $mail->Password = 'kjgr qnvy axtn iosd';
+                                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                                $mail->Port = 587;
+                                $mail->CharSet = 'UTF-8';
+
+                                // Người nhận
+                                $mail->setFrom('kientrantrung3@gmail.com', 'Homeseeker');
+                                $mail->addAddress($email, $fullname ?? $username);
+
+                                // Nội dung
+                                $mail->isHTML(true);
+                                $mail->Subject = 'Mã OTP Đặt Lại Mật Khẩu - Homeseeker';
+                                $mail->Body = "
+                                    <h2>Xin chào " . ($fullname ?? $username) . ",</h2>
+                                    <p>Bạn đã yêu cầu đặt lại mật khẩu tài khoản tại Homeseeker.</p>
+                                    <p>Mã xác thực OTP của bạn là: <strong>$otp</strong></p>
+                                    <p>Mã này sẽ hết hạn sau 15 phút.</p>
+                                    <p>Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.</p>
+                                ";
+
+                                $mail->send();
+                                
                                 // Chuyển hướng đến trang nhập OTP
                                 $_SESSION['reset_email'] = $email;
                                 $_SESSION['reset_user_id'] = $user_id;
                                 header("Location: verify_otp.php");
                                 exit();
-                            } else {
-                                $email_err = "Không thể gửi OTP. Vui lòng thử lại sau.";
+                            } catch (Exception $e) {
+                                $email_err = "Không thể gửi OTP: " . $mail->ErrorInfo;
                             }
                         }
                         mysqli_stmt_close($update_stmt);
